@@ -1273,6 +1273,66 @@ body {
   pointer-events: none;
 }
 
+.btn-locked {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px dashed #cbd5e1;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.btn-locked:hover {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #f59e0b;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.role-auth-card {
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.role-switch-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 18px 0;
+}
+
+.role-tag-badge {
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.role-tag-badge.current {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.role-tag-badge.target {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
 /* TOAST NOTIFICATION */
 .toast-container {
   position: fixed;

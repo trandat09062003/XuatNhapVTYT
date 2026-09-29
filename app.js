@@ -340,8 +340,9 @@ class MedicalInventoryApp {
       thukho: { dept: "Kho Tổng VTTBYT", actionLabel: "Lập Đơn Nhập Hàng" },
       truongphong: { dept: "Phòng Vật tư TBYT", actionLabel: "Duyệt Phiếu Lĩnh / Nhập" },
       dieuduong: { dept: "Khoa Cấp cứu / Điều trị", actionLabel: "Lập Phiếu Lĩnh VTTH" },
+      truongkhoa: { dept: "Khoa Lâm Sàng (Cấp cứu)", actionLabel: "Ký Duyệt Phiếu Lĩnh" },
       ketoan: { dept: "Phòng Tài chính Kế toán", actionLabel: "Kiểm Tra Hóa Đơn" },
-      banggiamdoc: { dept: "Ban Giám Đốc", actionLabel: "Xem Báo Cáo" }
+      banggiamdoc: { dept: "Ban Giám Đốc Bệnh Viện", actionLabel: "Giám Sát Toàn Viện" }
     };
     const r = roleMap[this.currentRole] || roleMap.thukho;
     document.getElementById("roleCurrentDept").innerHTML = `<i class="fa-solid fa-building-user"></i> Bộ phận: <b>${r.dept}</b>`;
@@ -533,21 +534,28 @@ class MedicalInventoryApp {
       const totalAmount = doc.items.reduce((sum, item) => sum + (item.qty * item.unitPrice), 0);
       let stepBadge = `<span class="badge ${doc.step === 7 ? 'badge-success' : 'badge-warning'}">Bước ${doc.step}/7: ${this.getImportStepName(doc.step)}</span>`;
 
+      const perm = this.getImportStepPermission(doc.step);
+      const isAllowed = this.currentRole === "banggiamdoc" || perm.roles.includes(this.currentRole);
+
       let actionButtons = "";
-      if (doc.step === 1) {
-        actionButtons = `<button class="btn btn-sm btn-primary" onclick="app.advanceImportStep('${doc.id}', 2)"><i class="fa-solid fa-paper-plane"></i> Gửi NCC (B2)</button>`;
-      } else if (doc.step === 2) {
-        actionButtons = `<button class="btn btn-sm btn-primary" onclick="app.openInspectionModal('${doc.id}')"><i class="fa-solid fa-users-viewfinder"></i> Họp HĐ Kiểm Nhập (B3)</button>`;
-      } else if (doc.step === 3) {
-        actionButtons = `<button class="btn btn-sm btn-primary" onclick="app.openInspectionModal('${doc.id}')"><i class="fa-solid fa-signature"></i> Ký Sổ Kiểm Nhập (B4)</button>`;
-      } else if (doc.step === 4) {
-        actionButtons = `<button class="btn btn-sm btn-info" onclick="app.advanceImportStep('${doc.id}', 5)"><i class="fa-solid fa-file-invoice"></i> Kế toán duyệt HĐ (B5)</button>`;
-      } else if (doc.step === 5) {
-        actionButtons = `<button class="btn btn-sm btn-success" onclick="app.advanceImportStep('${doc.id}', 6)"><i class="fa-solid fa-check"></i> Trưởng P. VTTBYT ký (B6)</button>`;
-      } else if (doc.step === 6) {
-        actionButtons = `<button class="btn btn-sm btn-primary" onclick="app.advanceImportStep('${doc.id}', 7)"><i class="fa-solid fa-receipt"></i> Đề Nghị TT (B7)</button>`;
-      } else {
+      if (doc.step === 7) {
         actionButtons = `<button class="btn btn-sm btn-outline" onclick="app.viewImportDetail('${doc.id}')"><i class="fa-solid fa-eye"></i> Xem chứng từ</button>`;
+      } else if (!isAllowed) {
+        actionButtons = `<button class="btn btn-sm btn-locked" onclick="app.promptRoleSwitch('${perm.roles[0]}', '${perm.title}', '${perm.person}', '${doc.id}', '${perm.context}')" title="Thao tác này thuộc thẩm quyền của: ${perm.title} (${perm.person})"><i class="fa-solid fa-lock"></i> Chờ ${perm.title} duyệt</button>`;
+      } else {
+        if (doc.step === 1) {
+          actionButtons = `<button class="btn btn-sm btn-primary" onclick="app.advanceImportStep('${doc.id}', 2)"><i class="fa-solid fa-paper-plane"></i> Gửi NCC (B2)</button>`;
+        } else if (doc.step === 2) {
+          actionButtons = `<button class="btn btn-sm btn-primary" onclick="app.openInspectionModal('${doc.id}')"><i class="fa-solid fa-users-viewfinder"></i> Họp HĐ Kiểm Nhập (B3)</button>`;
+        } else if (doc.step === 3) {
+          actionButtons = `<button class="btn btn-sm btn-primary" onclick="app.openInspectionModal('${doc.id}')"><i class="fa-solid fa-signature"></i> Ký Sổ Kiểm Nhập (B4)</button>`;
+        } else if (doc.step === 4) {
+          actionButtons = `<button class="btn btn-sm btn-info" onclick="app.advanceImportStep('${doc.id}', 5)"><i class="fa-solid fa-file-invoice"></i> Kế toán duyệt HĐ (B5)</button>`;
+        } else if (doc.step === 5) {
+          actionButtons = `<button class="btn btn-sm btn-success" onclick="app.advanceImportStep('${doc.id}', 6)"><i class="fa-solid fa-check"></i> Trưởng P. VTTBYT ký (B6)</button>`;
+        } else if (doc.step === 6) {
+          actionButtons = `<button class="btn btn-sm btn-primary" onclick="app.advanceImportStep('${doc.id}', 7)"><i class="fa-solid fa-receipt"></i> Đề Nghị TT (B7)</button>`;
+        }
       }
 
       return `
@@ -564,6 +572,19 @@ class MedicalInventoryApp {
         </tr>
       `;
     }).join("");
+  }
+
+  getImportStepPermission(step) {
+    const permissions = {
+      1: { roles: ["thukho", "truongphong"], title: "Thủ kho", person: "DS. Trần Văn An", context: "import_step_2" },
+      2: { roles: ["thukho", "truongphong"], title: "Thủ kho", person: "DS. Trần Văn An", context: "inspection" },
+      3: { roles: ["thukho", "truongphong", "ketoan"], title: "HĐ Kiểm Nhập", person: "Trưởng phòng, Kế toán & Thủ kho", context: "inspection" },
+      4: { roles: ["thukho", "truongphong", "ketoan"], title: "HĐ Kiểm Nhập", person: "Trưởng phòng, Kế toán & Thủ kho", context: "inspection" },
+      5: { roles: ["ketoan"], title: "Kế toán Dược", person: "CN. Nguyễn Thu Trang", context: "import_step_6" },
+      6: { roles: ["truongphong"], title: "Trưởng P. VTTBYT", person: "DS. Hoàng Thị Minh Hà", context: "import_step_7" },
+      7: { roles: ["thukho", "ketoan"], title: "Thủ kho & Kế toán", person: "DS. Trần Văn An & Kế toán", context: "view" }
+    };
+    return permissions[step] || { roles: ["thukho"], title: "Thủ kho", person: "DS. Trần Văn An", context: "view" };
   }
 
   getImportStepName(step) {
@@ -921,19 +942,26 @@ class MedicalInventoryApp {
     tbody.innerHTML = list.map(doc => {
       let stepBadge = `<span class="badge ${doc.step === 6 ? 'badge-success' : 'badge-primary'}">Bước ${doc.step}/6: ${this.getExportStepName(doc.step)}</span>`;
 
+      const perm = this.getExportStepPermission(doc.step);
+      const isAllowed = this.currentRole === "banggiamdoc" || perm.roles.includes(this.currentRole);
+
       let actionButtons = "";
-      if (doc.step === 1) {
-        actionButtons = `<button class="btn btn-sm btn-primary" onclick="app.advanceExportStep('${doc.id}', 2)"><i class="fa-solid fa-signature"></i> Trưởng khoa ký duyệt</button>`;
-      } else if (doc.step === 2) {
-        actionButtons = `<button class="btn btn-sm btn-info" onclick="app.advanceExportStep('${doc.id}', 3)"><i class="fa-solid fa-boxes-stacked"></i> Thủ kho xác nhận tồn (B2)</button>`;
-      } else if (doc.step === 3) {
-        actionButtons = `<button class="btn btn-sm btn-success" onclick="app.advanceExportStep('${doc.id}', 4)"><i class="fa-solid fa-stamp"></i> Trưởng P. VTTBYT duyệt (B3)</button>`;
-      } else if (doc.step === 4) {
-        actionButtons = `<button class="btn btn-sm btn-primary" onclick="app.openFefoAllocationModal('${doc.id}')"><i class="fa-solid fa-box-open"></i> Soạn hàng FEFO & In CT (B4)</button>`;
-      } else if (doc.step === 5) {
-        actionButtons = `<button class="btn btn-sm btn-success" onclick="app.openFefoAllocationModal('${doc.id}')"><i class="fa-solid fa-file-signature"></i> Ký giao nhận 2 bên (B5)</button>`;
-      } else {
+      if (doc.step === 6) {
         actionButtons = `<button class="btn btn-sm btn-outline" onclick="app.previewExportDocs('${doc.id}')"><i class="fa-solid fa-print"></i> Xem/In Mẫu 01 & 02</button>`;
+      } else if (!isAllowed) {
+        actionButtons = `<button class="btn btn-sm btn-locked" onclick="app.promptRoleSwitch('${perm.roles[0]}', '${perm.title}', '${perm.person}', '${doc.id}', '${perm.context}')" title="Thao tác này thuộc thẩm quyền của: ${perm.title} (${perm.person})"><i class="fa-solid fa-lock"></i> Chờ ${perm.title} duyệt</button>`;
+      } else {
+        if (doc.step === 1) {
+          actionButtons = `<button class="btn btn-sm btn-primary" onclick="app.advanceExportStep('${doc.id}', 2)"><i class="fa-solid fa-signature"></i> Trưởng khoa ký duyệt</button>`;
+        } else if (doc.step === 2) {
+          actionButtons = `<button class="btn btn-sm btn-info" onclick="app.advanceExportStep('${doc.id}', 3)"><i class="fa-solid fa-boxes-stacked"></i> Thủ kho xác nhận tồn (B2)</button>`;
+        } else if (doc.step === 3) {
+          actionButtons = `<button class="btn btn-sm btn-success" onclick="app.advanceExportStep('${doc.id}', 4)"><i class="fa-solid fa-stamp"></i> Trưởng P. VTTBYT duyệt (B3)</button>`;
+        } else if (doc.step === 4) {
+          actionButtons = `<button class="btn btn-sm btn-primary" onclick="app.openFefoAllocationModal('${doc.id}')"><i class="fa-solid fa-box-open"></i> Soạn hàng FEFO & In CT (B4)</button>`;
+        } else if (doc.step === 5) {
+          actionButtons = `<button class="btn btn-sm btn-success" onclick="app.openFefoAllocationModal('${doc.id}')"><i class="fa-solid fa-file-signature"></i> Ký giao nhận 2 bên (B5)</button>`;
+        }
       }
 
       return `
@@ -949,6 +977,80 @@ class MedicalInventoryApp {
         </tr>
       `;
     }).join("");
+  }
+
+  getExportStepPermission(step) {
+    const permissions = {
+      1: { roles: ["truongkhoa"], title: "Trưởng Khoa Lâm Sàng", person: "BS.CKI Nguyễn Văn Hùng", context: "export_step_2" },
+      2: { roles: ["thukho", "truongphong"], title: "Thủ kho VTTBYT", person: "DS. Trần Văn An", context: "export_step_3" },
+      3: { roles: ["truongphong"], title: "Trưởng P. VTTBYT", person: "DS. Hoàng Thị Minh Hà", context: "export_step_4" },
+      4: { roles: ["thukho"], title: "Thủ kho VTTBYT", person: "DS. Trần Văn An", context: "fefo" },
+      5: { roles: ["thukho", "dieuduong"], title: "Thủ kho & Điều dưỡng nhận", person: "DS. Trần Văn An & ĐD. Lê Thị Mai", context: "fefo" },
+      6: { roles: ["thukho", "dieuduong", "truongphong"], title: "Đã hoàn tất", person: "Các bộ phận", context: "print" }
+    };
+    return permissions[step] || { roles: ["dieuduong"], title: "Điều dưỡng", person: "ĐD. Lê Thị Mai", context: "view" };
+  }
+
+  promptRoleSwitch(targetRole, roleTitle, handlerName, docId, context) {
+    this.pendingRoleSwitch = { targetRole, docId, context };
+    const currentOption = document.getElementById("userRoleSelect")?.selectedOptions[0];
+    const currentName = currentOption ? currentOption.text : this.currentRole;
+
+    const roleNameMap = {
+      thukho: "Thủ kho (DS. Trần Văn An)",
+      truongphong: "Trưởng phòng VTTBYT (DS. Hoàng Thị Minh Hà)",
+      ketoan: "Kế toán Dược (CN. Nguyễn Thu Trang)",
+      truongkhoa: "Trưởng Khoa Lâm Sàng (BS.CKI Nguyễn Văn Hùng)",
+      dieuduong: "Điều dưỡng Khoa / KTV (ĐD. Lê Thị Mai)",
+      banggiamdoc: "Ban Giám Đốc Bệnh Viện"
+    };
+
+    const targetFullName = roleNameMap[targetRole] || roleTitle;
+
+    document.getElementById("roleAuthMessage").innerHTML = `
+      Chứng từ <b>${docId}</b> đang ở bước nghiệp vụ thuộc thẩm quyền của: <br>
+      <span class="text-primary font-bold"><i class="fa-solid fa-user-check"></i> ${roleTitle} (${handlerName})</span>.<br><br>
+      Bạn hiện đang thao tác với vai trò: <b>${currentName}</b>.<br>
+      Theo quy định luân chuyển chứng từ tại <b>Quyết định số 651/QĐ-BVPN</b>, chỉ đúng chức danh phụ trách mới có thẩm quyền ký số phê duyệt bước này để đảm bảo tính pháp lý và chống thất thoát vật tư.
+    `;
+
+    document.getElementById("roleAuthCurrentBadge").innerHTML = `<i class="fa-solid fa-user-xmark"></i> Hiện tại: <b>${this.currentRole}</b>`;
+    document.getElementById("roleAuthTargetBadge").innerHTML = `<i class="fa-solid fa-user-check"></i> Thẩm quyền: <b>${targetRole}</b>`;
+
+    openModal("modalRoleAuth");
+  }
+
+  executeRoleSwitch() {
+    if (!this.pendingRoleSwitch) return;
+    const { targetRole, docId, context } = this.pendingRoleSwitch;
+
+    const select = document.getElementById("userRoleSelect");
+    if (select) {
+      select.value = targetRole;
+    }
+    this.currentRole = targetRole;
+    this.updateRoleDisplay();
+    closeModal("modalRoleAuth");
+
+    this.showToast(`Đã chuyển sang vai trò [${targetRole}]. Thẩm quyền ký duyệt đã sẵn sàng!`, "success");
+
+    if (context === "inspection") {
+      this.openInspectionModal(docId);
+    } else if (context === "fefo") {
+      this.openFefoAllocationModal(docId);
+    } else if (context === "export_step_2") {
+      this.advanceExportStep(docId, 2);
+    } else if (context === "export_step_3") {
+      this.advanceExportStep(docId, 3);
+    } else if (context === "export_step_4") {
+      this.advanceExportStep(docId, 4);
+    } else if (context === "import_step_2") {
+      this.advanceImportStep(docId, 2);
+    } else if (context === "import_step_6") {
+      this.advanceImportStep(docId, 6);
+    } else if (context === "import_step_7") {
+      this.advanceImportStep(docId, 7);
+    }
   }
 
   getExportStepName(step) {

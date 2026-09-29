@@ -34,11 +34,12 @@
           <span><i class="fa-solid fa-user-gear"></i> Vai trò thao tác:</span>
         </div>
         <select id="userRoleSelect" class="form-select-sm">
-          <option value="thukho">Thủ kho (P. Vật tư TBYT)</option>
-          <option value="truongphong">Trưởng phòng VTTBYT</option>
-          <option value="dieuduong">Điều dưỡng Khoa / KTV</option>
-          <option value="ketoan">Kế toán Dược (P. TCKT)</option>
-          <option value="banggiamdoc">Ban Giám Đốc</option>
+          <option value="thukho">Thủ kho (DS. Trần Văn An)</option>
+          <option value="truongphong">Trưởng phòng VTTBYT (DS. Hoàng Thị Minh Hà)</option>
+          <option value="ketoan">Kế toán Dược - P. TCKT (CN. Nguyễn Thu Trang)</option>
+          <option value="truongkhoa">Trưởng Khoa Lâm Sàng (BS.CKI Nguyễn Văn Hùng)</option>
+          <option value="dieuduong">Điều dưỡng Khoa / KTV (ĐD. Lê Thị Mai)</option>
+          <option value="banggiamdoc">Ban Giám Đốc Bệnh Viện</option>
         </select>
         <div id="roleCurrentDept" class="role-dept-tag">
           <i class="fa-solid fa-building-user"></i> Khoa: Kho Tổng VTTBYT
@@ -1166,6 +1167,39 @@
       <div class="modal-footer">
         <button class="btn btn-outline" type="button" onclick="closeModal('modalTempLog')">Hủy</button>
         <button class="btn btn-primary" type="button" id="btnSaveTempLog" onclick="app.saveTempLog(event)">Lưu Nhật Ký</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: KIỂM SOÁT THẨM QUYỀN KÝ DUYỆT (RBAC THEO QĐ 651) -->
+  <div class="modal-backdrop" id="modalRoleAuth">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-user-shield text-warning"></i> Kiểm Soát Thẩm Quyền Phê Duyệt (QĐ 651)</h3>
+        <button class="modal-close" onclick="closeModal('modalRoleAuth')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="role-auth-card">
+          <p id="roleAuthMessage" style="line-height: 1.6;"></p>
+          <div class="role-switch-flow">
+            <div class="role-tag-badge current" id="roleAuthCurrentBadge">
+              <i class="fa-solid fa-user"></i> <span>Hiện tại: ...</span>
+            </div>
+            <i class="fa-solid fa-arrow-right text-muted"></i>
+            <div class="role-tag-badge target" id="roleAuthTargetBadge">
+              <i class="fa-solid fa-id-badge"></i> <span>Thẩm quyền: ...</span>
+            </div>
+          </div>
+          <div class="alert-info-box text-xs mt-2">
+            <i class="fa-solid fa-scale-balanced"></i> <b>Nguyên tắc luân chuyển chứng từ:</b> Theo QĐ 651/QĐ-BVPN, để đảm bảo tính pháp lý, minh bạch và chống thất thoát vật tư, mỗi bước nghiệp vụ chỉ được ký duyệt bởi đúng người chịu trách nhiệm thẩm quyền.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" type="button" onclick="closeModal('modalRoleAuth')">Đóng</button>
+        <button class="btn btn-primary" type="button" id="btnSwitchRoleConfirm" onclick="app.executeRoleSwitch()">
+          <i class="fa-solid fa-repeat"></i> Chuyển Sang Đúng Vai Trò & Tiếp Tục
+        </button>
       </div>
     </div>
   </div>

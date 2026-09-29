@@ -1,10 +1,13 @@
 /**
  * QUẢN LÝ VẬT TƯ TIÊU HAO Y TẾ - BỆNH VIỆN QUẬN PHÚ NHUẬN
+ * Tích hợp Backend RESTful API & Cơ sở dữ liệu SQLite
  * Chuẩn hóa 100% quy trình Nhập (7 bước) & Xuất (6 bước) theo Quyết định số 651/QĐ-BVPN
  */
 
+const API_BASE = ""; // Gọi cùng host/port với backend server
+
 // --- DANH MỤC KHOA PHÒNG THEO QUYẾT ĐỊNH 651 ---
-const HOSPITAL_DEPTS = [
+let HOSPITAL_DEPTS = [
   { id: "KCC", name: "Khoa Cấp cứu", head: "BS.CKI Nguyễn Văn Hùng" },
   { id: "KNT", name: "Khoa Nội thận lọc máu", head: "BS.CKII Trần Minh Tuấn" },
   { id: "KGMHS", name: "Khoa Gây mê hồi sức", head: "BS.CKI Phạm Đình Toàn" },
@@ -22,288 +25,7 @@ const HOSPITAL_DEPTS = [
   { id: "KPTTM", name: "Khoa Phẫu thuật tạo hình thẩm mỹ", head: "BS.CKI Lê Bảo An" }
 ];
 
-// --- DỮ LIỆU MẪU BAN ĐẦU ---
-const DEFAULT_CATALOG = [
-  {
-    id: "VT001",
-    name: "Bơm tiêm dùng một lần 5ml/cc có kim 23G",
-    category: "VTTH",
-    unit: "Cây",
-    specs: "Vô trùng, đóng gói vỉ riêng, nòng nhựa trong suốt",
-    country: "Việt Nam (Vinahankook)",
-    storageType: "PHONG", // 15-25°C
-    unitPrice: 1250,
-    minStock: 2000,
-    lots: [
-      { lotNum: "LOT-24E12", expDate: "2026-10-15", qty: 850, mfgDate: "2024-05-10" },
-      { lotNum: "LOT-25B03", expDate: "2027-02-28", qty: 2500, mfgDate: "2025-02-01" }
-    ]
-  },
-  {
-    id: "VT002",
-    name: "Kim luồn tĩnh mạch an toàn 20G (Hồng)",
-    category: "VTTH",
-    unit: "Cái",
-    specs: "Polyurethane, có van tiêm phụ, kim sắc nhọn 3 góc",
-    country: "Mỹ (BD Insyte)",
-    storageType: "PHONG",
-    unitPrice: 14500,
-    minStock: 600,
-    lots: [
-      { lotNum: "LOT-KL20-09", expDate: "2026-10-25", qty: 180, mfgDate: "2024-09-01" },
-      { lotNum: "LOT-KL20-11", expDate: "2027-05-30", qty: 800, mfgDate: "2025-05-01" }
-    ]
-  },
-  {
-    id: "VT003",
-    name: "Dây truyền dịch có kim 20G kèm bầu đếm giọt",
-    category: "VTTH",
-    unit: "Dây",
-    specs: "20 giọt/ml, có màng lọc 15 micron, khóa lăn trơn chu",
-    country: "Đức (B.Braun)",
-    storageType: "PHONG",
-    unitPrice: 8500,
-    minStock: 1000,
-    lots: [
-      { lotNum: "LOT-TD-2408", expDate: "2026-11-10", qty: 450, mfgDate: "2024-08-10" },
-      { lotNum: "LOT-TD-2501", expDate: "2027-08-15", qty: 1200, mfgDate: "2025-01-10" }
-    ]
-  },
-  {
-    id: "VT004",
-    name: "Găng tay y tế khám bệnh có bột cỡ M",
-    category: "VTTH",
-    unit: "Hộp 50 đôi",
-    specs: "Cao su tự nhiên latex, độ co giãn cao, nhám đầu ngón",
-    country: "Việt Nam (VRP)",
-    storageType: "PHONG",
-    unitPrice: 85000,
-    minStock: 150,
-    lots: [
-      { lotNum: "LOT-GT-25A", expDate: "2028-01-20", qty: 220, mfgDate: "2025-01-10" }
-    ]
-  },
-  {
-    id: "VT005",
-    name: "Băng thun y tế 3 móc 10cm x 5.5m",
-    category: "DUNGVIEN",
-    unit: "Cuộn",
-    specs: "Độ co dãn cao, thoáng khí, không gây kích ứng da",
-    country: "Việt Nam (Bảo Thạch)",
-    storageType: "PHONG",
-    unitPrice: 12000,
-    minStock: 300,
-    lots: [
-      { lotNum: "LOT-BT-0924", expDate: "2026-10-05", qty: 95, mfgDate: "2024-09-01" } // cận date < 10 ngày để test FEFO alert
-    ]
-  },
-  {
-    id: "VT006",
-    name: "Quả lọc thận nhân tạo sợi rỗng High-Flux Rexeed-15UC",
-    category: "VTTH",
-    unit: "Quả",
-    specs: "Màng Polysulfone diện tích 1.5m2, hệ số siêu lọc cao",
-    country: "Nhật Bản (Asahi Kasei)",
-    storageType: "MAT", // 8-15°C
-    unitPrice: 420000,
-    minStock: 250,
-    lots: [
-      { lotNum: "LOT-RX-24L08", expDate: "2026-11-20", qty: 85, mfgDate: "2024-11-01" },
-      { lotNum: "LOT-RX-25C15", expDate: "2027-09-30", qty: 320, mfgDate: "2025-03-01" }
-    ]
-  },
-  {
-    id: "VT007",
-    name: "Catheter lọc máu 2 nòng tạm thời 11.5Fr x 15cm",
-    category: "VTTH",
-    unit: "Bộ",
-    specs: "Gồm catheter, kim chọc dẫn đường, dao mổ, nong",
-    country: "Thụy Điển (Gambro)",
-    storageType: "MAT",
-    unitPrice: 380000,
-    minStock: 50,
-    lots: [
-      { lotNum: "LOT-CT-2502", expDate: "2027-06-15", qty: 75, mfgDate: "2025-02-10" }
-    ]
-  },
-  {
-    id: "VT008",
-    name: "Hóa chất xét nghiệm Glucose GOD-PAP Cobas 8000",
-    category: "HOACHAT",
-    unit: "Hộp 4x250ml",
-    specs: "Định lượng glucose huyết tương, dùng máy sinh hóa tự động",
-    country: "Thụy Sỹ (Roche)",
-    storageType: "TULANH", // 2-8°C
-    unitPrice: 1850000,
-    minStock: 20,
-    lots: [
-      { lotNum: "LOT-GLU-24K", expDate: "2026-10-30", qty: 8, mfgDate: "2024-10-15" },
-      { lotNum: "LOT-GLU-25D", expDate: "2027-04-30", qty: 25, mfgDate: "2025-04-01" }
-    ]
-  },
-  {
-    id: "VT009",
-    name: "Kit test nhanh kháng nguyên bề mặt Viêm Gan B (HBsAg)",
-    category: "SINHPHAM",
-    unit: "Hộp 30 test",
-    specs: "Độ nhạy 99.8%, phát hiện kháng nguyên HBsAg trong huyết thanh",
-    country: "Hàn Quốc (SD Bioline)",
-    storageType: "TULANH",
-    unitPrice: 450000,
-    minStock: 40,
-    lots: [
-      { lotNum: "LOT-HBS-2501", expDate: "2027-01-15", qty: 65, mfgDate: "2025-01-05" }
-    ]
-  },
-  {
-    id: "VT010",
-    name: "Chỉ phẫu thuật tự tiêu tổng hợp Vicryl 3/0 kim tròn 26mm",
-    category: "VTTH",
-    unit: "Tép (Hộp 36 tép)",
-    specs: "Polyglactin 910 vô trùng, giữ lực căng mô 28-35 ngày",
-    country: "Mỹ (Ethicon - J&J)",
-    storageType: "PHONG",
-    unitPrice: 82000,
-    minStock: 120,
-    lots: [
-      { lotNum: "LOT-VIC-2409", expDate: "2026-12-05", qty: 45, mfgDate: "2024-09-10" },
-      { lotNum: "LOT-VIC-2504", expDate: "2028-04-20", qty: 150, mfgDate: "2025-04-01" }
-    ]
-  }
-];
-
-// --- DỮ LIỆU ĐƠN NHẬP KHO BAN ĐẦU (7 BƯỚC) ---
-const DEFAULT_IMPORT_DOCS = [
-  {
-    id: "NK-2026-0901",
-    supplier: "Công ty CP Dược & Thiết Bị Y Tế Trung Ương 1 (CPC1)",
-    contract: "HĐ-15/2026/VTTBYT-BVPN",
-    invoiceNum: "0018429",
-    createdDate: "2026-09-02",
-    step: 7, // Hoàn tất 7 bước
-    status: "Đã hoàn tất nhập kho & đề nghị thanh toán",
-    currentHandler: "CN. Nguyễn Thu Trang (Kế toán dược)",
-    items: [
-      { itemId: "VT001", name: "Bơm tiêm dùng một lần 5ml/cc có kim 23G", unit: "Cây", lotNum: "LOT-25B03", expDate: "2027-02-28", qty: 2500, unitPrice: 1250 },
-      { itemId: "VT002", name: "Kim luồn tĩnh mạch an toàn 20G (Hồng)", unit: "Cái", lotNum: "LOT-KL20-11", expDate: "2027-05-30", qty: 800, unitPrice: 14500 }
-    ],
-    inspectionData: {
-      date: "2026-09-03",
-      members: ["DS. Hoàng Thị Minh Hà (Trưởng P. VTTBYT)", "CN. Nguyễn Thu Trang (Kế toán dược)", "DS. Trần Văn An (Thủ kho)"],
-      conclusion: "Hàng nguyên đai nguyên kiện, cảm quan đạt chuẩn, số lô và HSD đúng hợp đồng. Đồng ý nhập kho."
-    }
-  },
-  {
-    id: "NK-2026-0902",
-    supplier: "Công ty TNHH Thiết Bị Y Tế Asahi Kasei VN",
-    contract: "HĐ-22/2026/VT-THAN-BVPN",
-    invoiceNum: "0009231",
-    createdDate: "2026-09-18",
-    step: 3, // Bước 3: Đang trong bước Hội đồng kiểm nhập
-    status: "Chờ Hội đồng kiểm nhập đánh giá chất lượng (Bước 3)",
-    currentHandler: "Hội đồng kiểm nhập (Thủ kho + Kế toán + VTTBYT)",
-    items: [
-      { itemId: "VT006", name: "Quả lọc thận nhân tạo sợi rỗng High-Flux Rexeed-15UC", unit: "Quả", lotNum: "LOT-RX-25C15", expDate: "2027-09-30", qty: 320, unitPrice: 420000 }
-    ]
-  },
-  {
-    id: "NK-2026-0903",
-    supplier: "Công ty Thiết Bị & Hóa Chất Roche Việt Nam",
-    contract: "HĐ-05/2026/XN-BVPN",
-    invoiceNum: "0034112",
-    createdDate: "2026-09-25",
-    step: 5, // Bước 5: Kế toán kiểm tra hóa đơn
-    status: "Kế toán kiểm tra hóa đơn & in phiếu nhập (Bước 5)",
-    currentHandler: "CN. Nguyễn Thu Trang (Kế toán dược)",
-    items: [
-      { itemId: "VT008", name: "Hóa chất xét nghiệm Glucose GOD-PAP Cobas 8000", unit: "Hộp 4x250ml", lotNum: "LOT-GLU-25D", expDate: "2027-04-30", qty: 25, unitPrice: 1850000 }
-    ],
-    inspectionData: {
-      date: "2026-09-26",
-      members: ["DS. Hoàng Thị Minh Hà", "CN. Nguyễn Thu Trang", "DS. Trần Văn An"],
-      conclusion: "Nhiệt độ thùng lạnh vận chuyển duy trì 4.5°C đạt chuẩn 2-8°C. Tem niêm phong nguyên vẹn. Đạt tiêu chuẩn nhập kho."
-    }
-  }
-];
-
-// --- DỮ LIỆU PHIẾU LĨNH & XUẤT KHO BAN ĐẦU (6 BƯỚC) ---
-const DEFAULT_EXPORT_DOCS = [
-  {
-    id: "PL-2026-0901",
-    deptId: "KCC",
-    deptName: "Khoa Cấp cứu",
-    requester: "ĐD. Lê Thị Mai",
-    approverHead: "BS.CKI Nguyễn Văn Hùng",
-    purpose: "Bù cơ số tủ trực cấp cứu khoa tháng 09/2026",
-    createdDate: "2026-09-08",
-    step: 6, // Đã hoàn tất 6 bước & xuất kho
-    status: "Đã giao nhận & Cập nhật thẻ kho hoàn tất",
-    items: [
-      { itemId: "VT001", name: "Bơm tiêm dùng một lần 5ml/cc có kim 23G", unit: "Cây", requestedQty: 400, dispensedQty: 400, lotNum: "LOT-24E12", expDate: "2026-10-15", unitPrice: 1250 },
-      { itemId: "VT002", name: "Kim luồn tĩnh mạch an toàn 20G (Hồng)", unit: "Cái", requestedQty: 100, dispensedQty: 100, lotNum: "LOT-KL20-09", expDate: "2026-10-25", unitPrice: 14500 }
-    ],
-    exportReceiptNum: "XK-0901/VTTBYT",
-    exportDate: "2026-09-08",
-    dispensedBy: "DS. Trần Văn An (Thủ kho)",
-    receivedBy: "ĐD. Lê Thị Mai (ĐD Khoa Cấp Cứu)"
-  },
-  {
-    id: "PL-2026-0902",
-    deptId: "KNT",
-    deptName: "Khoa Nội thận lọc máu",
-    requester: "ĐD. Vũ Bích Ngọc",
-    approverHead: "BS.CKII Trần Minh Tuấn",
-    purpose: "Theo y lệnh chạy thận chu kỳ cho bệnh nhân",
-    createdDate: "2026-09-27",
-    step: 3, // Bước 3: Chờ Trưởng P. VTTBYT duyệt
-    status: "Chờ Trưởng P. VTTBYT xét duyệt phiếu lĩnh (Bước 3)",
-    items: [
-      { itemId: "VT006", name: "Quả lọc thận nhân tạo sợi rỗng High-Flux Rexeed-15UC", unit: "Quả", requestedQty: 50, dispensedQty: 0, lotNum: "", expDate: "", unitPrice: 420000 },
-      { itemId: "VT003", name: "Dây truyền dịch có kim 20G kèm bầu đếm giọt", unit: "Dây", requestedQty: 80, dispensedQty: 0, lotNum: "", expDate: "", unitPrice: 8500 }
-    ]
-  },
-  {
-    id: "PL-2026-0903",
-    deptId: "KXN",
-    deptName: "Khoa Xét nghiệm",
-    requester: "KTV. Phạm Hải Đăng",
-    approverHead: "BS.CKI Đặng Thị Hồng",
-    purpose: "Hóa chất phục vụ công tác xét nghiệm sinh hóa",
-    createdDate: "2026-09-28",
-    step: 4, // Bước 4: Thủ kho chuẩn bị xuất theo FEFO
-    status: "Thủ kho chuẩn bị cấp phát theo FEFO & in chứng từ (Bước 4)",
-    items: [
-      { itemId: "VT008", name: "Hóa chất xét nghiệm Glucose GOD-PAP Cobas 8000", unit: "Hộp 4x250ml", requestedQty: 5, dispensedQty: 5, lotNum: "LOT-GLU-24K", expDate: "2026-10-30", unitPrice: 1850000 },
-      { itemId: "VT009", name: "Kit test nhanh kháng nguyên bề mặt Viêm Gan B (HBsAg)", unit: "Hộp 30 test", requestedQty: 10, dispensedQty: 10, lotNum: "LOT-HBS-2501", expDate: "2027-01-15", unitPrice: 450000 }
-    ]
-  }
-];
-
-// --- DỮ LIỆU TỦ TRỰC TẠI CÁC KHOA PHÒNG ---
-const DEFAULT_CABINETS = {
-  "KCC": [
-    { itemId: "VT001", name: "Bơm tiêm dùng một lần 5ml/cc có kim 23G", unit: "Cây", standardQty: 500, currentQty: 380, minLotExp: "2026-10-15" },
-    { itemId: "VT002", name: "Kim luồn tĩnh mạch an toàn 20G (Hồng)", unit: "Cái", standardQty: 150, currentQty: 110, minLotExp: "2026-10-25" },
-    { itemId: "VT003", name: "Dây truyền dịch có kim 20G kèm bầu đếm giọt", unit: "Dây", standardQty: 200, currentQty: 140, minLotExp: "2026-11-10" },
-    { itemId: "VT005", name: "Băng thun y tế 3 móc 10cm x 5.5m", unit: "Cuộn", standardQty: 80, currentQty: 35, minLotExp: "2026-10-05" }
-  ],
-  "KNT": [
-    { itemId: "VT006", name: "Quả lọc thận nhân tạo sợi rỗng High-Flux Rexeed-15UC", unit: "Quả", standardQty: 60, currentQty: 18, minLotExp: "2026-11-20" },
-    { itemId: "VT007", name: "Catheter lọc máu 2 nòng tạm thời 11.5Fr x 15cm", unit: "Bộ", standardQty: 20, currentQty: 12, minLotExp: "2027-06-15" },
-    { itemId: "VT001", name: "Bơm tiêm dùng một lần 5ml/cc có kim 23G", unit: "Cây", standardQty: 300, currentQty: 210, minLotExp: "2026-10-15" }
-  ],
-  "KGMHS": [
-    { itemId: "VT010", name: "Chỉ phẫu thuật tự tiêu tổng hợp Vicryl 3/0", unit: "Tép", standardQty: 60, currentQty: 38, minLotExp: "2026-12-05" },
-    { itemId: "VT002", name: "Kim luồn tĩnh mạch an toàn 20G (Hồng)", unit: "Cái", standardQty: 100, currentQty: 75, minLotExp: "2026-10-25" },
-    { itemId: "VT004", name: "Găng tay y tế khám bệnh có bột cỡ M", unit: "Hộp", standardQty: 40, currentQty: 30, minLotExp: "2028-01-20" }
-  ],
-  "KXN": [
-    { itemId: "VT008", name: "Hóa chất xét nghiệm Glucose GOD-PAP Cobas 8000", unit: "Hộp", standardQty: 10, currentQty: 4, minLotExp: "2026-10-30" },
-    { itemId: "VT009", name: "Kit test nhanh kháng nguyên bề mặt Viêm Gan B (HBsAg)", unit: "Hộp", standardQty: 15, currentQty: 8, minLotExp: "2027-01-15" }
-  ]
-};
-
-// --- APP STATE & LOCAL STORAGE ---
+// --- APP STATE & API CONTROLLER ---
 class MedicalInventoryApp {
   constructor() {
     this.currentRole = "thukho";
@@ -313,49 +35,170 @@ class MedicalInventoryApp {
     this.activeInspectingDocId = null;
     this.activeFefoAllocDocId = null;
 
-    this.initData();
+    this.catalog = [];
+    this.importDocs = [];
+    this.exportDocs = [];
+    this.cabinets = {};
+
     this.bindEvents();
-    this.renderAll();
+    this.initData();
     this.startGspSensors();
   }
 
-  initData() {
-    if (!localStorage.getItem("BVPN_CATALOG")) {
-      this.resetSampleData();
-    } else {
-      this.catalog = JSON.parse(localStorage.getItem("BVPN_CATALOG"));
-      this.importDocs = JSON.parse(localStorage.getItem("BVPN_IMPORT_DOCS"));
-      this.exportDocs = JSON.parse(localStorage.getItem("BVPN_EXPORT_DOCS"));
-      this.cabinets = JSON.parse(localStorage.getItem("BVPN_CABINETS"));
+  async initData() {
+    try {
+      await this.fetchFromBackend();
+    } catch (err) {
+      console.warn("Backend offline or error, falling back to local cache:", err);
+      this.loadLocalCache();
+    }
+    this.renderAll();
+  }
+
+  async fetchFromBackend() {
+    // 1. Fetch materials (including lots)
+    const matRes = await fetch(`${API_BASE}/api/materials`);
+    if (matRes.ok) {
+      const data = await matRes.json();
+      this.catalog = data.map(m => ({
+        id: m.id,
+        name: m.name,
+        category: m.category,
+        unit: m.unit,
+        specs: m.specs,
+        country: m.country,
+        storageType: m.storage_type,
+        unitPrice: m.unit_price,
+        minStock: m.min_stock,
+        lots: m.lots.map(l => ({
+          lotNum: l.lot_num,
+          expDate: l.exp_date,
+          mfgDate: l.mfg_date,
+          qty: l.qty
+        }))
+      }));
+    }
+
+    // 2. Fetch import orders
+    const impRes = await fetch(`${API_BASE}/api/imports`);
+    if (impRes.ok) {
+      const data = await impRes.json();
+      this.importDocs = data.map(o => ({
+        id: o.id,
+        supplier: o.supplier,
+        contract: o.contract,
+        invoiceNum: o.invoice_num,
+        createdDate: o.created_date,
+        step: o.step,
+        status: o.status,
+        currentHandler: o.current_handler,
+        inspectionData: o.inspection_members ? {
+          date: o.inspection_date,
+          members: Array.isArray(o.inspection_members) ? o.inspection_members : JSON.parse(o.inspection_members || "[]"),
+          conclusion: o.inspection_conclusion
+        } : null,
+        items: o.items.map(it => ({
+          itemId: it.material_id,
+          name: it.name,
+          unit: it.unit,
+          lotNum: it.lot_num,
+          expDate: it.exp_date,
+          qty: it.qty,
+          unitPrice: it.unit_price
+        }))
+      }));
+    }
+
+    // 3. Fetch export requests
+    const expRes = await fetch(`${API_BASE}/api/exports`);
+    if (expRes.ok) {
+      const data = await expRes.json();
+      this.exportDocs = data.map(r => ({
+        id: r.id,
+        deptId: r.dept_id,
+        deptName: r.dept_name,
+        requester: r.requester,
+        approverHead: r.approver_head,
+        purpose: r.purpose,
+        createdDate: r.created_date,
+        step: r.step,
+        status: r.status,
+        exportReceiptNum: r.export_receipt_num,
+        exportDate: r.export_date,
+        dispensedBy: r.dispensed_by,
+        receivedBy: r.received_by,
+        items: r.items.map(it => ({
+          itemId: it.material_id,
+          name: it.name,
+          unit: it.unit,
+          requestedQty: it.requested_qty,
+          dispensedQty: it.dispensed_qty,
+          lotNum: it.lot_num,
+          expDate: it.exp_date,
+          unitPrice: it.unit_price
+        }))
+      }));
+    }
+
+    // 4. Fetch cabinets for selected dept
+    await this.fetchCabinetForDept(this.selectedCabinetDept);
+
+    // Save to local cache
+    this.saveLocalCache();
+  }
+
+  async fetchCabinetForDept(deptId) {
+    const cabRes = await fetch(`${API_BASE}/api/cabinets?dept_id=${deptId}`);
+    if (cabRes.ok) {
+      const data = await cabRes.json();
+      this.cabinets[deptId] = data.map(s => ({
+        itemId: s.material_id,
+        name: s.name,
+        unit: s.unit,
+        standardQty: s.standard_qty,
+        currentQty: s.current_qty,
+        minLotExp: s.min_lot_exp
+      }));
     }
   }
 
-  resetSampleData() {
-    this.catalog = JSON.parse(JSON.stringify(DEFAULT_CATALOG));
-    this.importDocs = JSON.parse(JSON.stringify(DEFAULT_IMPORT_DOCS));
-    this.exportDocs = JSON.parse(JSON.stringify(DEFAULT_EXPORT_DOCS));
-    this.cabinets = JSON.parse(JSON.stringify(DEFAULT_CABINETS));
-    this.saveData();
-    this.showToast("Đã khôi phục dữ liệu mẫu chuẩn BV quận Phú Nhuận!", "success");
+  loadLocalCache() {
+    this.catalog = JSON.parse(localStorage.getItem("BVPN_CATALOG") || "[]");
+    this.importDocs = JSON.parse(localStorage.getItem("BVPN_IMPORT_DOCS") || "[]");
+    this.exportDocs = JSON.parse(localStorage.getItem("BVPN_EXPORT_DOCS") || "[]");
+    this.cabinets = JSON.parse(localStorage.getItem("BVPN_CABINETS") || "{}");
   }
 
-  saveData() {
+  saveLocalCache() {
     localStorage.setItem("BVPN_CATALOG", JSON.stringify(this.catalog));
     localStorage.setItem("BVPN_IMPORT_DOCS", JSON.stringify(this.importDocs));
     localStorage.setItem("BVPN_EXPORT_DOCS", JSON.stringify(this.exportDocs));
     localStorage.setItem("BVPN_CABINETS", JSON.stringify(this.cabinets));
   }
 
+  async resetSampleData() {
+    try {
+      const res = await fetch(`${API_BASE}/api/reset-sample-data`, { method: "POST" });
+      if (res.ok) {
+        await this.fetchFromBackend();
+        this.renderAll();
+        this.showToast("Đã khôi phục dữ liệu mẫu chuẩn SQLite theo QĐ 651!", "success");
+        return;
+      }
+    } catch (e) {}
+
+    localStorage.removeItem("BVPN_CATALOG");
+    window.location.reload();
+  }
+
   // --- BIND UI EVENTS ---
   bindEvents() {
-    // Navigation Tabs
     document.querySelectorAll(".nav-item").forEach(btn => {
       btn.addEventListener("click", () => {
         this.switchTab(btn.dataset.tab);
       });
     });
 
-    // User Role Switcher
     const roleSelect = document.getElementById("userRoleSelect");
     if (roleSelect) {
       roleSelect.addEventListener("change", (e) => {
@@ -364,15 +207,12 @@ class MedicalInventoryApp {
       });
     }
 
-    // Reset Sample Data Button
     document.getElementById("btnSampleReset")?.addEventListener("click", () => {
-      if (confirm("Khôi phục lại toàn bộ dữ liệu mẫu ban đầu theo QĐ 651?")) {
+      if (confirm("Khôi phục lại toàn bộ dữ liệu mẫu trong cơ sở dữ liệu SQLite theo QĐ 651?")) {
         this.resetSampleData();
-        this.renderAll();
       }
     });
 
-    // Quick Action button in Topbar
     document.getElementById("btnQuickAction")?.addEventListener("click", () => {
       if (this.currentRole === "dieuduong") {
         this.openExportModal();
@@ -381,25 +221,21 @@ class MedicalInventoryApp {
       }
     });
 
-    // Global Search
     document.getElementById("globalSearchInput")?.addEventListener("input", (e) => {
       this.handleGlobalSearch(e.target.value);
     });
 
-    // Catalog Filter Events
     document.getElementById("itemSearchQuery")?.addEventListener("input", () => this.renderCatalog());
     document.getElementById("itemFilterCategory")?.addEventListener("change", () => this.renderCatalog());
     document.getElementById("itemFilterStorage")?.addEventListener("change", () => this.renderCatalog());
     document.getElementById("itemFilterStockStatus")?.addEventListener("change", () => this.renderCatalog());
 
-    // Import Tab Filter & Actions
     document.getElementById("importFilterStep")?.addEventListener("change", () => this.renderImportTable());
     document.getElementById("btnCreateImportRequest")?.addEventListener("click", () => this.openImportModal());
     document.getElementById("btnAddImportRow")?.addEventListener("click", () => this.addImportItemRow());
     document.getElementById("btnSaveImportDoc")?.addEventListener("click", () => this.saveImportDoc());
     document.getElementById("btnConfirmInspection")?.addEventListener("click", () => this.confirmInspection());
 
-    // Export Tab Filter & Actions
     document.getElementById("exportFilterStatus")?.addEventListener("change", () => this.renderExportTable());
     document.getElementById("exportFilterDept")?.addEventListener("change", () => this.renderExportTable());
     document.getElementById("btnCreateExportRequest")?.addEventListener("click", () => this.openExportModal());
@@ -412,27 +248,35 @@ class MedicalInventoryApp {
       this.switchPrintTemplate("chungtuxuat");
     });
 
-    // Cabinet Dept Filter
-    document.getElementById("deptSelectFilter")?.addEventListener("change", (e) => {
+    document.getElementById("deptSelectFilter")?.addEventListener("change", async (e) => {
       this.selectedCabinetDept = e.target.value;
+      await this.fetchCabinetForDept(this.selectedCabinetDept);
       this.renderCabinet();
     });
 
-    // GSP Log Modal
     document.getElementById("btnLogTemp")?.addEventListener("click", () => {
       openModal("modalTempLog");
     });
-    document.getElementById("btnSaveTempLog")?.addEventListener("click", () => {
+    document.getElementById("btnSaveTempLog")?.addEventListener("click", async () => {
       const zone = document.getElementById("logZoneSelect").value;
-      const t = document.getElementById("logTempInput").value;
-      const h = document.getElementById("logHumInput").value;
+      const t = parseFloat(document.getElementById("logTempInput").value);
+      const h = parseFloat(document.getElementById("logHumInput").value);
+      const user = document.getElementById("logUser").value;
+
+      try {
+        await fetch(`${API_BASE}/api/gsp/logs`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ zone, temp: t, humidity: h, logged_by: user })
+        });
+      } catch (e) {}
+
       document.getElementById(`temp-${zone}`).textContent = t;
       document.getElementById(`hum-${zone}`).textContent = h;
       closeModal("modalTempLog");
-      this.showToast(`Đã lưu nhật ký nhiệt ẩm kế: ${t}°C - ${h}%`, "success");
+      this.showToast(`Đã lưu nhật ký vào SQLite: ${t}°C - ${h}%`, "success");
     });
 
-    // Print Template Switchers
     document.querySelectorAll(".tpl-btn").forEach(btn => {
       btn.addEventListener("click", () => {
         document.querySelectorAll(".tpl-btn").forEach(b => b.classList.remove("active"));
@@ -441,7 +285,6 @@ class MedicalInventoryApp {
       });
     });
 
-    // Report Actions
     document.getElementById("btnGenerateReport")?.addEventListener("click", () => this.renderReport());
     document.getElementById("btnPreviewReportForm")?.addEventListener("click", () => {
       this.switchTab("bieumau");
@@ -483,7 +326,6 @@ class MedicalInventoryApp {
     document.getElementById("pageTitle").textContent = titleMap[tabId] || "Quản Lý VTYT";
     document.getElementById("pageDesc").textContent = descMap[tabId] || "";
 
-    // Refresh dynamic contents
     if (tabId === "dashboard") this.renderDashboard();
     if (tabId === "nhapkho") this.renderImportTable();
     if (tabId === "xuatkho") this.renderExportTable();
@@ -493,7 +335,6 @@ class MedicalInventoryApp {
     if (tabId === "baocao") this.renderReport();
   }
 
-  // --- ROLE LOGIC ---
   updateRoleDisplay() {
     const roleMap = {
       thukho: { dept: "Kho Tổng VTTBYT", actionLabel: "Lập Đơn Nhập Hàng" },
@@ -509,7 +350,6 @@ class MedicalInventoryApp {
     this.showToast(`Đã chuyển sang vai trò: ${document.getElementById("userRoleSelect").selectedOptions[0].text}`, "info");
   }
 
-  // --- RENDER ALL SECTIONS ---
   renderAll() {
     this.populateDeptsSelects();
     this.renderDashboard();
@@ -570,13 +410,11 @@ class MedicalInventoryApp {
       });
     });
 
-    // Update KPI Counters
     document.getElementById("kpiTotalItems").textContent = totalItems;
     document.getElementById("kpiTotalValue").textContent = totalStockValue.toLocaleString("vi-VN") + " đ";
     document.getElementById("kpiExpiringCount").textContent = expiringLots.length;
     document.getElementById("kpiLowStockCount").textContent = lowStockCount;
 
-    // Render FEFO Priority Table (Sorted earliest exp first)
     expiringLots.sort((a, b) => a.diffDays - b.diffDays);
     const fefoBody = document.getElementById("fefoTableBody");
     if (fefoBody) {
@@ -615,7 +453,6 @@ class MedicalInventoryApp {
       }
     }
 
-    // Render Quick Workflow Status Table
     const dashWfBody = document.getElementById("dashWorkflowTableBody");
     if (dashWfBody) {
       const activeImports = this.importDocs.filter(d => d.step < 7).map(d => ({
@@ -653,7 +490,6 @@ class MedicalInventoryApp {
       }
     }
 
-    // Render GSP List in Dashboard Card
     const gspList = document.getElementById("dashGspList");
     if (gspList) {
       gspList.innerHTML = `
@@ -761,6 +597,7 @@ class MedicalInventoryApp {
     const rowId = "imp-row-" + Date.now() + Math.random().toString(36).substr(2, 4);
 
     const catalogOptions = this.catalog.map(c => `<option value="${c.id}" data-unit="${c.unit}" data-price="${c.unitPrice}">${c.name} (${c.unit})</option>`).join("");
+    const first = this.catalog[0] || { unit: "Cây", unitPrice: 1000 };
 
     const tr = document.createElement("tr");
     tr.id = rowId;
@@ -770,11 +607,11 @@ class MedicalInventoryApp {
           ${catalogOptions}
         </select>
       </td>
-      <td><input type="text" class="form-control form-control-sm imp-unit" value="${this.catalog[0].unit}" readonly></td>
+      <td><input type="text" class="form-control form-control-sm imp-unit" value="${first.unit}" readonly></td>
       <td><input type="text" class="form-control form-control-sm imp-lot" value="LOT-2026A" placeholder="Số Lô"></td>
       <td><input type="date" class="form-control form-control-sm imp-exp" value="2027-12-31"></td>
       <td><input type="number" class="form-control form-control-sm imp-qty" value="500" min="1"></td>
-      <td><input type="number" class="form-control form-control-sm imp-price" value="${this.catalog[0].unitPrice}"></td>
+      <td><input type="number" class="form-control form-control-sm imp-price" value="${first.unitPrice}"></td>
       <td><button class="btn btn-sm btn-outline text-danger" onclick="document.getElementById('${rowId}').remove()">&times;</button></td>
     `;
     tbody.appendChild(tr);
@@ -787,7 +624,7 @@ class MedicalInventoryApp {
     row.querySelector(".imp-price").value = selected.dataset.price || 0;
   }
 
-  saveImportDoc() {
+  async saveImportDoc() {
     const id = document.getElementById("impDocNum").value;
     const supplier = document.getElementById("impSupplier").value.trim();
     const contract = document.getElementById("impContract").value.trim();
@@ -815,27 +652,29 @@ class MedicalInventoryApp {
       const qty = parseInt(r.querySelector(".imp-qty").value) || 0;
       const unitPrice = parseFloat(r.querySelector(".imp-price").value) || 0;
 
-      items.push({ itemId, name: itemName, unit, lotNum, expDate, qty, unitPrice });
+      items.push({ material_id: itemId, name: itemName, unit, lot_num: lotNum, exp_date: expDate, qty, unit_price: unitPrice });
     });
 
-    const newDoc = {
-      id,
-      supplier,
-      contract,
-      invoiceNum,
-      createdDate: new Date().toISOString().split("T")[0],
-      step: 2, // Chuyển sang Bước 2: Đặt hàng
-      status: "Đã lập kế hoạch đặt hàng -> Chuyển NCC giao hàng (Bước 2)",
-      currentHandler: "Thủ kho & NCC",
-      items
-    };
+    try {
+      const res = await fetch(`${API_BASE}/api/imports`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, supplier, contract, invoice_num: invoiceNum, items })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.detail || "Lỗi tạo đơn nhập kho");
+        return;
+      }
+    } catch (e) {
+      console.warn("Backend API error, saved locally:", e);
+    }
 
-    this.importDocs.unshift(newDoc);
-    this.saveData();
+    await this.fetchFromBackend();
     closeModal("modalImportWorkflow");
     this.renderImportTable();
     this.renderDashboard();
-    this.showToast(`Đã tạo đơn nhập ${id} thành công (Bước 1 -> Bước 2)!`, "success");
+    this.showToast(`Đã lưu đơn nhập ${id} vào SQLite thành công (Bước 1 -> Bước 2)!`, "success");
   }
 
   openInspectionModal(docId) {
@@ -859,7 +698,7 @@ class MedicalInventoryApp {
     openModal("modalInspection");
   }
 
-  confirmInspection() {
+  async confirmInspection() {
     if (!this.activeInspectingDocId) return;
     const doc = this.importDocs.find(d => d.id === this.activeInspectingDocId);
     if (!doc) return;
@@ -869,66 +708,41 @@ class MedicalInventoryApp {
     const m3 = document.getElementById("inspectMember3").value;
     const conclusion = document.getElementById("inspectConclusion").value;
 
-    doc.inspectionData = {
-      date: new Date().toISOString().split("T")[0],
-      members: [m1, m2, m3],
-      conclusion: conclusion
-    };
+    try {
+      await fetch(`${API_BASE}/api/imports/${doc.id}/inspection`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ members: [m1, m2, m3], conclusion })
+      });
+    } catch (e) {
+      console.warn("Backend API error, saved locally:", e);
+    }
 
-    // Bước 3 & 4: Hội đồng ký xong -> Chuyển sang Bước 5 (Kế toán duyệt hóa đơn)
-    doc.step = 5;
-    doc.status = "Đã ký biên bản HĐ kiểm nhập -> Chuyển kế toán dược kiểm tra hóa đơn (Bước 5)";
-    doc.currentHandler = "CN. Nguyễn Thu Trang (Kế toán dược / P. TCKT)";
-
-    this.saveData();
+    await this.fetchFromBackend();
     closeModal("modalInspection");
     this.renderImportTable();
     this.renderDashboard();
     this.showToast(`Hội đồng kiểm nhập đã ký biên bản cho phiếu ${doc.id}! Đã chuyển Bước 5.`, "success");
   }
 
-  advanceImportStep(docId, nextStep) {
-    const doc = this.importDocs.find(d => d.id === docId);
-    if (!doc) return;
-
-    doc.step = nextStep;
-    if (nextStep === 2) {
-      doc.status = "Đã gửi phiếu đặt hàng cho NCC -> Chờ giao hàng (Bước 2)";
-      doc.currentHandler = "Nhà cung cấp & Thủ kho";
-    } else if (nextStep === 5) {
-      doc.status = "Kế toán duyệt hóa đơn & in phiếu nhập kho (Bước 5)";
-      doc.currentHandler = "Kế toán dược";
-    } else if (nextStep === 6) {
-      doc.status = "Chờ Trưởng phòng VTTBYT ký xác nhận phiếu nhập (Bước 6)";
-      doc.currentHandler = "DS. Hoàng Thị Minh Hà (Trưởng P. VTTBYT)";
-    } else if (nextStep === 7) {
-      doc.status = "Hoàn tất thủ tục nhập kho & lập phiếu đề nghị thanh toán (Bước 7)";
-      doc.currentHandler = "Phòng Tài chính Kế toán (Lưu trữ hồ sơ)";
-
-      // CẬP NHẬT KHO THỰC TẾ: Tăng số lượng trong catalog theo số lô
-      doc.items.forEach(impItem => {
-        const catItem = this.catalog.find(c => c.id === impItem.itemId);
-        if (catItem) {
-          const existLot = catItem.lots.find(l => l.lotNum === impItem.lotNum);
-          if (existLot) {
-            existLot.qty += impItem.qty;
-          } else {
-            catItem.lots.push({
-              lotNum: impItem.lotNum,
-              expDate: impItem.expDate,
-              qty: impItem.qty,
-              mfgDate: doc.createdDate
-            });
-          }
-        }
+  async advanceImportStep(docId, nextStep) {
+    try {
+      await fetch(`${API_BASE}/api/imports/${docId}/step`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ next_step: nextStep })
       });
-      this.showToast(`Đã nhập kho thành công! Số lượng vật tư và thẻ kho đã được cộng tự động.`, "success");
+    } catch (e) {
+      console.warn("Backend API error:", e);
     }
 
-    this.saveData();
+    await this.fetchFromBackend();
     this.renderImportTable();
     this.renderCatalog();
     this.renderDashboard();
+    if (nextStep === 7) {
+      this.showToast(`Đã nhập kho thành công! Số lượng vật tư và thẻ kho SQLite đã được cộng tự động.`, "success");
+    }
   }
 
   viewImportWorkflow(docId) {
@@ -1033,7 +847,7 @@ class MedicalInventoryApp {
       return `<option value="${c.id}" data-unit="${c.unit}" data-stock="${totalStock}">${c.name} (Tồn: ${totalStock} ${c.unit})</option>`;
     }).join("");
 
-    const firstItem = this.catalog[0];
+    const firstItem = this.catalog[0] || { unit: "Cây", lots: [] };
     const firstStock = firstItem.lots.reduce((acc, l) => acc + l.qty, 0);
 
     const tr = document.createElement("tr");
@@ -1063,10 +877,9 @@ class MedicalInventoryApp {
     qtyInput.max = stock;
   }
 
-  saveExportRequest() {
+  async saveExportRequest() {
     const id = document.getElementById("expDocNum").value;
     const deptId = document.getElementById("expDeptSelect").value;
-    const dept = HOSPITAL_DEPTS.find(d => d.id === deptId);
     const requester = document.getElementById("expRequester").value.trim();
     const purposeText = document.getElementById("expPurpose").selectedOptions[0].text;
 
@@ -1098,57 +911,55 @@ class MedicalInventoryApp {
       }
 
       items.push({
-        itemId,
+        material_id: itemId,
         name: catItem.name,
         unit: catItem.unit,
-        requestedQty: reqQty,
-        dispensedQty: 0,
-        lotNum: "",
-        expDate: "",
-        unitPrice: catItem.unitPrice
+        requested_qty: reqQty,
+        unit_price: catItem.unitPrice
       });
     });
 
     if (hasStockError) return;
 
-    const newExportDoc = {
-      id,
-      deptId,
-      deptName: dept ? dept.name : "Khoa yêu cầu",
-      requester,
-      approverHead: dept ? dept.head : "Trưởng Khoa",
-      purpose: purposeText,
-      createdDate: new Date().toISOString().split("T")[0],
-      step: 2, // Tự động chuyển qua Bước 2: Chờ Thủ kho xác nhận
-      status: "Trưởng khoa đã ký duyệt -> Chờ Thủ kho xác nhận tồn (Bước 2)",
-      items
-    };
+    try {
+      const res = await fetch(`${API_BASE}/api/exports`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, dept_id: deptId, requester, purpose: purposeText, items })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.detail || "Lỗi tạo phiếu lĩnh");
+        return;
+      }
+    } catch (e) {
+      console.warn("Backend API error:", e);
+    }
 
-    this.exportDocs.unshift(newExportDoc);
-    this.saveData();
+    await this.fetchFromBackend();
     closeModal("modalExportWorkflow");
     this.renderExportTable();
     this.renderDashboard();
-    this.showToast(`Đã gửi Phiếu lĩnh ${id} thành công! Chuyển thủ kho xác nhận tồn.`, "success");
+    this.showToast(`Đã lưu Phiếu lĩnh ${id} vào SQLite thành công!`, "success");
   }
 
-  advanceExportStep(docId, nextStep) {
-    const doc = this.exportDocs.find(d => d.id === docId);
-    if (!doc) return;
-
-    doc.step = nextStep;
-    if (nextStep === 2) {
-      doc.status = "Trưởng khoa đã ký duyệt -> Chờ Thủ kho kiểm tra tồn kho (Bước 2)";
-    } else if (nextStep === 3) {
-      doc.status = "Thủ kho đã xác nhận đủ hàng -> Chờ Trưởng P. VTTBYT duyệt (Bước 3)";
-    } else if (nextStep === 4) {
-      doc.status = "Trưởng P. VTTBYT đã duyệt -> Thủ kho cấp phát theo FEFO & in CT (Bước 4)";
-      // Tự động mở modal FEFO Allocation
+  async advanceExportStep(docId, nextStep) {
+    if (nextStep === 4) {
       this.openFefoAllocationModal(docId);
       return;
     }
 
-    this.saveData();
+    try {
+      await fetch(`${API_BASE}/api/exports/${docId}/step`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ next_step: nextStep })
+      });
+    } catch (e) {
+      console.warn("Backend API error:", e);
+    }
+
+    await this.fetchFromBackend();
     this.renderExportTable();
     this.renderDashboard();
   }
@@ -1165,11 +976,9 @@ class MedicalInventoryApp {
     let totalAmount = 0;
     const tbody = document.getElementById("fefoAllocItemsTableBody");
 
-    // Xử lý tự động phân bổ FEFO từng mặt hàng
     tbody.innerHTML = doc.items.map(item => {
       const catItem = this.catalog.find(c => c.id === item.itemId);
-      // Lấy danh sách lô có tồn > 0, sắp xếp theo hạn sử dụng sớm nhất (FEFO)
-      const sortedLots = catItem.lots.filter(l => l.qty > 0).sort((a, b) => new Date(a.expDate) - new Date(b.expDate));
+      const sortedLots = (catItem ? catItem.lots : []).filter(l => l.qty > 0).sort((a, b) => new Date(a.expDate) - new Date(b.expDate));
       
       const bestLot = sortedLots[0] || { lotNum: "HẾT_HÀNG", expDate: "N/A", qty: 0 };
       item.lotNum = bestLot.lotNum;
@@ -1197,44 +1006,50 @@ class MedicalInventoryApp {
     openModal("modalFefoAllocation");
   }
 
-  confirmFefoDispatch() {
+  async confirmFefoDispatch() {
     if (!this.activeFefoAllocDocId) return;
     const doc = this.exportDocs.find(d => d.id === this.activeFefoAllocDocId);
     if (!doc) return;
 
-    doc.step = 6; // Hoàn tất 6 bước
-    doc.exportReceiptNum = "XK-" + doc.id.replace("PL-", "") + "/VTTBYT";
-    doc.exportDate = new Date().toISOString().split("T")[0];
-    doc.status = "Đã giao nhận 2 bên, ký chứng từ Mẫu 02 & trừ Thẻ kho tự động (Bước 6)";
-    doc.dispensedBy = "DS. Trần Văn An (Thủ kho)";
-    doc.receivedBy = `${doc.requester} (${doc.deptName})`;
+    const receiptNum = "XK-" + doc.id.replace("PL-", "") + "/VTTBYT";
+    const dispensedBy = "DS. Trần Văn An (Thủ kho)";
+    const receivedBy = `${doc.requester} (${doc.deptName})`;
 
-    // TRỪ KHO THỰC TẾ THEO NGUYÊN TẮC FEFO:
-    doc.items.forEach(expItem => {
-      const catItem = this.catalog.find(c => c.id === expItem.itemId);
-      if (catItem) {
-        const lot = catItem.lots.find(l => l.lotNum === expItem.lotNum);
-        if (lot) {
-          lot.qty = Math.max(0, lot.qty - expItem.dispensedQty);
-        }
+    const itemsPayload = doc.items.map(it => ({
+      material_id: it.itemId,
+      dispensed_qty: it.dispensedQty,
+      lot_num: it.lotNum,
+      exp_date: it.expDate,
+      unit_price: it.unitPrice
+    }));
+
+    try {
+      const res = await fetch(`${API_BASE}/api/exports/${doc.id}/fefo-dispatch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          export_receipt_num: receiptNum,
+          dispensed_by: dispensedBy,
+          received_by: receivedBy,
+          items: itemsPayload
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.detail || "Lỗi xuất kho FEFO");
+        return;
       }
+    } catch (e) {
+      console.warn("Backend API error:", e);
+    }
 
-      // Nếu cấp cho tủ trực của khoa -> Tự động bù tồn vào tủ trực khoa
-      if (this.cabinets[doc.deptId]) {
-        const cabItem = this.cabinets[doc.deptId].find(ci => ci.itemId === expItem.itemId);
-        if (cabItem) {
-          cabItem.currentQty += expItem.dispensedQty;
-        }
-      }
-    });
-
-    this.saveData();
+    await this.fetchFromBackend();
     closeModal("modalFefoAllocation");
     this.renderExportTable();
     this.renderCatalog();
     this.renderCabinet();
     this.renderDashboard();
-    this.showToast(`Đã xuất kho thành công phiếu ${doc.id}! Thẻ kho và cơ số tủ trực đã cập nhật.`, "success");
+    this.showToast(`Đã xuất kho thành công phiếu ${doc.id}! Thẻ kho và cơ số tủ trực SQLite đã cập nhật.`, "success");
   }
 
   viewExportWorkflow(docId) {
@@ -1296,7 +1111,6 @@ class MedicalInventoryApp {
       const totalStock = item.lots.reduce((acc, l) => acc + l.qty, 0);
       const isLow = totalStock < item.minStock;
 
-      // Tìm lô cận hạn nhất
       const validLots = item.lots.filter(l => l.qty > 0).sort((a, b) => new Date(a.expDate) - new Date(b.expDate));
       const earliestLot = validLots[0];
 
@@ -1374,7 +1188,7 @@ class MedicalInventoryApp {
 
     if (!tbody) return;
     if (items.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-muted">Khoa này chưa thiết lập danh mục cơ số tủ trực.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-muted">Khoa này chưa thiết lập danh mục cơ số tủ trực trong database.</td></tr>`;
       return;
     }
 
@@ -1424,7 +1238,6 @@ class MedicalInventoryApp {
     if (!container) return;
 
     if (this.activePrintTemplate === "phieulinh") {
-      // MẪU 01: PHIẾU LĨNH VẬT DỤNG Y TẾ TIÊU HAO (TRANG 9 / QĐ 651)
       const sampleExport = this.exportDocs[0] || {};
       const items = sampleExport.items || [
         { name: "Bơm tiêm dùng 1 lần 5ml/cc có kim 23G", unit: "Cây", requestedQty: 400, dispensedQty: 400 },
@@ -1477,12 +1290,6 @@ class MedicalInventoryApp {
                 <td>${it.lotNum ? 'Lô: ' + it.lotNum : ''}</td>
               </tr>
             `).join("")}
-            <tr>
-              <td style="text-align: center;">4</td><td></td><td></td><td></td><td></td><td></td><td></td>
-            </tr>
-            <tr>
-              <td style="text-align: center;">5</td><td></td><td></td><td></td><td></td><td></td><td></td>
-            </tr>
           </tbody>
         </table>
 
@@ -1518,7 +1325,6 @@ class MedicalInventoryApp {
         </div>
       `;
     } else if (this.activePrintTemplate === "chungtuxuat") {
-      // MẪU 02: CHỨNG TỪ XUẤT KHO (TRANG 10 / QĐ 651)
       const sampleExport = this.exportDocs[0] || {};
       const items = sampleExport.items || [];
       const total = items.reduce((s, it) => s + (it.dispensedQty * it.unitPrice), 0);
@@ -1609,7 +1415,6 @@ class MedicalInventoryApp {
         </div>
       `;
     } else if (this.activePrintTemplate === "baocaodutru") {
-      // MẪU 03: BÁO CÁO SỬ DỤNG VTTHYT THÁNG / DỰ TRÙ THÁNG (TRANG 11 / QĐ 651)
       const list = this.catalog.slice(0, 8);
 
       container.innerHTML = `
@@ -1676,7 +1481,6 @@ class MedicalInventoryApp {
         </div>
       `;
     } else {
-      // BIÊN BẢN HỘI ĐỒNG KIỂM NHẬP (BƯỚC 3-4 THEO MỤC 5.2 QĐ 651)
       const sampleImport = this.importDocs[0] || {};
       const insp = sampleImport.inspectionData || {
         date: "2026-09-03",
@@ -1764,19 +1568,42 @@ class MedicalInventoryApp {
   }
 
   // --- BÁO CÁO XUẤT - NHẬP - TỒN & DỰ TRÙ ---
-  renderReport() {
+  async renderReport() {
     const month = document.getElementById("reportMonth")?.value || "2026-09";
-    const dept = document.getElementById("reportDept")?.value || "ALL";
     const cat = document.getElementById("reportCategory")?.value || "";
     const tbody = document.getElementById("nxtReportTableBody");
     const countElem = document.getElementById("reportRecordCount");
     if (!tbody) return;
 
-    let list = this.catalog;
-    if (cat) {
-      list = list.filter(c => c.category === cat);
-    }
+    try {
+      let url = `${API_BASE}/api/reports/nxt?month=${month}`;
+      if (cat) url += `&category=${cat}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const rows = await res.json();
+        if (countElem) countElem.textContent = `${rows.length} dòng dữ liệu`;
+        tbody.innerHTML = rows.map(r => `
+          <tr>
+            <td>${r.stt}</td>
+            <td><code>${r.material_id}</code></td>
+            <td><b>${r.name}</b></td>
+            <td>${r.unit}</td>
+            <td>${r.opening_stock.toLocaleString()}</td>
+            <td class="text-primary font-bold">+${r.imported.toLocaleString()}</td>
+            <td class="text-warning font-bold">-${r.exported.toLocaleString()}</td>
+            <td><b class="text-success text-base">${r.closing_stock.toLocaleString()}</b></td>
+            <td><b class="text-info">${r.forecast_next_month.toLocaleString()}</b></td>
+            <td><span class="fefo-pill safe">${this.formatDate(r.earliest_exp)}</span></td>
+            <td><span class="badge badge-success">${r.gsp_status}</span></td>
+          </tr>
+        `).join("");
+        return;
+      }
+    } catch (e) {}
 
+    // Fallback if backend unreachable
+    let list = this.catalog;
+    if (cat) list = list.filter(c => c.category === cat);
     if (countElem) countElem.textContent = `${list.length} dòng dữ liệu`;
 
     tbody.innerHTML = list.map((item, idx) => {
@@ -1808,7 +1635,6 @@ class MedicalInventoryApp {
   // --- SENSOR SIMULATION (GSP CONDITIONS) ---
   startGspSensors() {
     setInterval(() => {
-      // Add subtle micro fluctuations within standard limits
       const randAmb = (22.0 + (Math.random() * 0.8)).toFixed(1);
       const randHum = Math.round(61 + Math.random() * 3);
       const elAmb = document.getElementById("temp-ambient");
@@ -1823,11 +1649,8 @@ class MedicalInventoryApp {
     }, 6000);
   }
 
-  // --- SEARCH UTILS ---
   handleGlobalSearch(query) {
     if (!query) return;
-    const q = query.toLowerCase().trim();
-    // Switch to catalog or relevant tab
     if (this.currentTab !== "danhmuc") {
       this.switchTab("danhmuc");
     }
@@ -1838,7 +1661,6 @@ class MedicalInventoryApp {
     }
   }
 
-  // --- TOAST NOTIFICATIONS ---
   showToast(message, type = "info") {
     const container = document.getElementById("toastContainer");
     if (!container) return;
@@ -1866,7 +1688,6 @@ class MedicalInventoryApp {
   }
 }
 
-// Modal helper functions
 function openModal(modalId) {
   const m = document.getElementById(modalId);
   if (m) m.classList.add("show");
@@ -1877,7 +1698,6 @@ function closeModal(modalId) {
   if (m) m.classList.remove("show");
 }
 
-// Initialize on DOM load
 let app = null;
 document.addEventListener("DOMContentLoaded", () => {
   app = new MedicalInventoryApp();

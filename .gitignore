@@ -9,6 +9,12 @@ desktop.ini
 *.swp
 *.swo
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.db-journal
+
 # Logs & Temp
 *.log
 scratch/

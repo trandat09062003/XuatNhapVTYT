@@ -3,9 +3,15 @@
 
 ---
 
-## 1. KHỞI CHẠY ỨNG DỤNG
-Hệ thống đã được cài đặt và đang chạy sẵn tại máy chủ cục bộ:
-- **Địa chỉ truy cập trình duyệt**: [http://localhost:8080](http://localhost:8080) (hoặc mở trực tiếp file `index.html`).
+## 1. KHỞI CHẠY HỆ THỐNG
+Hệ thống sử dụng máy chủ Backend **FastAPI** và cơ sở dữ liệu tập trung **SQLite**:
+- **Khởi động server**:
+  ```bash
+  python -m uvicorn server:app --host 0.0.0.0 --port 8080 --reload
+  ```
+- **Địa chỉ giao diện**: [http://localhost:8080](http://localhost:8080)
+- **Tài liệu API Swagger**: [http://localhost:8080/docs](http://localhost:8080/docs)
+- **Cơ sở dữ liệu**: Lưu trữ tại tệp `hospital_inventory.db`.
 
 ---
 
@@ -19,7 +25,7 @@ Hệ thống đã được cài đặt và đang chạy sẵn tại máy chủ c
 | **B4** | **Lập Sổ kiểm nhập hàng hóa** | Thủ kho & HĐ kiểm nhập | Mở modal **"Hội Đồng Kiểm Nhập"**, nhập ý kiến đánh giá, ký xác nhận của 3 thành viên: Trưởng P. VTTBYT + Kế toán dược + Thủ kho. |
 | **B5** | **Kiểm tra hóa đơn** | P. Tài chính kế toán (Kế toán dược) | Kiểm tra tính hợp lệ của hóa đơn GTGT, đối chiếu gói thầu, tạo và in **Phiếu nhập kho**. |
 | **B6** | **Hoàn tất thủ tục nhập kho** | P. VTTBYT + P. TCKT | Trưởng phòng VTTBYT và Trưởng phòng TCKT ký phê duyệt trên phiếu nhập kho. Lưu trữ hồ sơ 1 năm. |
-| **B7** | **Lập đề nghị thanh toán** | Kế toán dược / P. TCKT | Lập bộ chứng từ thanh toán (Hóa đơn + Phiếu nhập kho + Sổ kiểm nhập + Phiếu đề nghị thanh toán). Hệ thống tự động **cộng dồn số lượng vào Thẻ kho** và theo dõi từng số Lô/HSD. |
+| **B7** | **Lập đề nghị thanh toán** | Kế toán dược / P. TCKT | Lập bộ chứng từ thanh toán (Hóa đơn + Phiếu nhập kho + Sổ kiểm nhập + Phiếu đề nghị thanh toán). Hệ thống tự động **cộng dồn số lượng vào Thẻ kho SQLite** và theo dõi từng số Lô/HSD. |
 
 ---
 
@@ -32,7 +38,7 @@ Hệ thống đã được cài đặt và đang chạy sẵn tại máy chủ c
 | **X3** | **Xét duyệt phiếu lĩnh** | Trưởng phòng VTTBYT | Trưởng phòng VTTBYT kiểm tra tính hợp lệ và ký duyệt điện tử. |
 | **X4** | **Cấp phát theo FEFO** | Thủ kho VTTBYT | Hệ thống tự động kích hoạt **Thuật toán FEFO (First Expired First Out)**: tự động chọn **Lô hàng cận hạn nhất** để xuất trước. In **Chứng từ xuất kho** (Mẫu số 02). |
 | **X5** | **Giao nhận VTTHYT** | Thủ kho & ĐD Khoa nhận | Hai bên kiểm tra đối chiếu thực tế, đóng gói và ký xác nhận trên Chứng từ xuất kho. |
-| **X6** | **Cập nhật Thẻ kho** | Thủ kho / Kế toán dược | Hệ thống tự động **trừ tồn kho**, ghi giảm thẻ kho và tự động bù cơ số vào **Tủ trực của Khoa**. |
+| **X6** | **Cập nhật Thẻ kho** | Thủ kho / Kế toán dược | Hệ thống tự động **trừ tồn kho trong Database SQLite**, ghi giảm thẻ kho và tự động bù cơ số vào **Tủ trực của Khoa**. |
 
 ---
 
@@ -41,7 +47,7 @@ Hệ thống đã được cài đặt và đang chạy sẵn tại máy chủ c
 - **Kho Mát**: Duy trì 8°C – 15°C (Quả lọc thận High-flux Rexeed, Catheter lọc máu...).
 - **Kho Lạnh**: Duy trì ≤ 8°C.
 - **Tủ Lạnh Xét Nghiệm**: Duy trì 2°C – 8°C (Hóa chất sinh hóa, Test kit nhanh HBsAg/HIV...).
-- **Cơ chế đo đạc**: Bảng giám sát thời gian thực kèm tính năng ghi **Nhật ký nhiệt ẩm kế** lưu trữ lịch sử kiểm tra.
+- **Cơ chế đo đạc**: Bảng giám sát thời gian thực kèm tính năng ghi **Nhật ký nhiệt ẩm kế** lưu trữ lịch sử kiểm tra vào database.
 
 ---
 

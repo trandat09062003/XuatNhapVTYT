@@ -922,8 +922,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline" onclick="closeModal('modalImportWorkflow')">Hủy</button>
-        <button class="btn btn-primary" id="btnSaveImportDoc">Lưu & Chuyển Bước Tiếp Theo</button>
+        <button class="btn btn-outline" type="button" onclick="closeModal('modalImportWorkflow')">Hủy</button>
+        <button class="btn btn-primary" type="button" id="btnSaveImportDoc" onclick="app.saveImportDoc(event)">Lưu & Chuyển Bước Tiếp Theo</button>
       </div>
     </div>
   </div>
@@ -942,15 +942,24 @@
 
         <div class="inspection-members-grid mt-3">
           <div class="member-box">
-            <label>1. Đại diện Ban Giám Đốc / Trưởng P. VTTBYT:</label>
+            <div class="member-box-header">
+              <label>1. Đại diện BGD / Trưởng P. VTTBYT:</label>
+              <span class="badge badge-success text-xs"><i class="fa-solid fa-shield-halved"></i> Sẵn sàng ký</span>
+            </div>
             <input type="text" id="inspectMember1" class="form-control" value="DS. Hoàng Thị Minh Hà">
           </div>
           <div class="member-box">
-            <label>2. Kế toán dược (P. TCKT):</label>
+            <div class="member-box-header">
+              <label>2. Kế toán dược (P. TCKT):</label>
+              <span class="badge badge-success text-xs"><i class="fa-solid fa-shield-halved"></i> Sẵn sàng ký</span>
+            </div>
             <input type="text" id="inspectMember2" class="form-control" value="CN. Nguyễn Thu Trang">
           </div>
           <div class="member-box">
-            <label>3. Thủ kho VTTBYT:</label>
+            <div class="member-box-header">
+              <label>3. Thủ kho VTTBYT:</label>
+              <span class="badge badge-success text-xs"><i class="fa-solid fa-shield-halved"></i> Sẵn sàng ký</span>
+            </div>
             <input type="text" id="inspectMember3" class="form-control" value="DS. Trần Văn An">
           </div>
         </div>
@@ -979,10 +988,17 @@
           <label>Ý Kiến / Kết Luận Chung Của Hội Đồng Kiểm Nhập:</label>
           <textarea id="inspectConclusion" class="form-control" rows="2">Các mặt hàng đầy đủ quy cách, nguyên vẹn tem nhãn, hạn dùng đạt chuẩn > 80%, nhiệt độ giao hàng đạt chuẩn GSP. Đồng ý nhập kho.</textarea>
         </div>
+
+        <div class="digital-cert-banner mt-3">
+          <i class="fa-solid fa-award"></i>
+          <div>
+            <b>Xác thực ký số Hội đồng (QĐ 651/QĐ-BVPN):</b> Ký xác nhận đồng thuận giữa Đại diện BGD/Trưởng phòng, Kế toán dược và Thủ kho. Sau khi ký số thành công, hệ thống tự động lập <b>Sổ kiểm nhập</b> và chuyển giao Kế toán duyệt hóa đơn & in phiếu nhập kho (Bước 5).
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline" onclick="closeModal('modalInspection')">Đóng</button>
-        <button class="btn btn-success" id="btnConfirmInspection">
+        <button class="btn btn-outline" type="button" onclick="closeModal('modalInspection')">Đóng</button>
+        <button class="btn btn-success" type="button" id="btnConfirmInspection" onclick="app.confirmInspection(event)">
           <i class="fa-solid fa-file-signature"></i> Ký Xác Nhận HĐ Kiểm Nhập & Lập Sổ Kiểm Nhập
         </button>
       </div>
@@ -1050,8 +1066,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline" onclick="closeModal('modalExportWorkflow')">Hủy</button>
-        <button class="btn btn-primary" id="btnSaveExportRequest">Gửi Phiếu Lĩnh Trình Duyệt</button>
+        <button class="btn btn-outline" type="button" onclick="closeModal('modalExportWorkflow')">Hủy</button>
+        <button class="btn btn-primary" type="button" id="btnSaveExportRequest" onclick="app.saveExportRequest(event)">Gửi Phiếu Lĩnh Trình Duyệt</button>
       </div>
     </div>
   </div>
@@ -1104,11 +1120,11 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline" onclick="closeModal('modalFefoAllocation')">Đóng</button>
-        <button class="btn btn-secondary" id="btnPrintExpDocFromModal">
+        <button class="btn btn-outline" type="button" onclick="closeModal('modalFefoAllocation')">Đóng</button>
+        <button class="btn btn-secondary" type="button" id="btnPrintExpDocFromModal">
           <i class="fa-solid fa-print"></i> In Chứng Từ Xuất Kho (Mẫu 02)
         </button>
-        <button class="btn btn-success" id="btnConfirmFefoDispatch">
+        <button class="btn btn-success" type="button" id="btnConfirmFefoDispatch" onclick="app.confirmFefoDispatch(event)">
           <i class="fa-solid fa-signature"></i> Bàn Giao Nhận Hàng & Cập Nhật Thẻ Kho (Bước 5 & 6)
         </button>
       </div>
@@ -1148,8 +1164,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline" onclick="closeModal('modalTempLog')">Hủy</button>
-        <button class="btn btn-primary" id="btnSaveTempLog">Lưu Nhật Ký</button>
+        <button class="btn btn-outline" type="button" onclick="closeModal('modalTempLog')">Hủy</button>
+        <button class="btn btn-primary" type="button" id="btnSaveTempLog" onclick="app.saveTempLog(event)">Lưu Nhật Ký</button>
       </div>
     </div>
   </div>

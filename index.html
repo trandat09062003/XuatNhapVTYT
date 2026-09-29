@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Vật Tư Tiêu Hao Y Tế - BV Quận Phú Nhuận</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-box">
+          <div class="cross-icon"><i class="fa-solid fa-hospital"></i></div>
+          <div>
+            <div class="logo-title">BV QUẬN PHÚ NHUẬN</div>
+            <div class="logo-subtitle">Kho Vật Tư & Thiết Bị Y Tế</div>
+          </div>
+        </div>
+        <div class="decision-badge">
+          <i class="fa-solid fa-file-shield"></i> QĐ 651/QĐ-BVPN
+        </div>
+      </div>
+
+      <!-- User Role Selector -->
+      <div class="role-selector-card">
+        <div class="role-header">
+          <span><i class="fa-solid fa-user-gear"></i> Vai trò thao tác:</span>
+        </div>
+        <select id="userRoleSelect" class="form-select-sm">
+          <option value="thukho">Thủ kho (P. Vật tư TBYT)</option>
+          <option value="truongphong">Trưởng phòng VTTBYT</option>
+          <option value="dieuduong">Điều dưỡng Khoa / KTV</option>
+          <option value="ketoan">Kế toán Dược (P. TCKT)</option>
+          <option value="banggiamdoc">Ban Giám Đốc</option>
+        </select>
+        <div id="roleCurrentDept" class="role-dept-tag">
+          <i class="fa-solid fa-building-user"></i> Khoa: Kho Tổng VTTBYT
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="dashboard">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Tổng Quan & KPIs</span>
+        </button>
+        <button class="nav-item" data-tab="nhapkho">
+          <i class="fa-solid fa-arrow-down-to-bracket"></i>
+          <span>Quy Trình Nhập Kho (7 Bước)</span>
+          <span class="badge-step-count">7 Bước</span>
+        </button>
+        <button class="nav-item" data-tab="xuatkho">
+          <i class="fa-solid fa-arrow-up-from-bracket"></i>
+          <span>Quy Trình Xuất Kho (6 Bước)</span>
+          <span class="badge-step-count">6 Bước</span>
+        </button>
+        <button class="nav-item" data-tab="danhmuc">
+          <i class="fa-solid fa-boxes-stacked"></i>
+          <span>Danh Mục Vật Tư & Lô/HSD</span>
+        </button>
+        <button class="nav-item" data-tab="tutruc">
+          <i class="fa-solid fa-kit-medical"></i>
+          <span>Tủ Trực Các Khoa Phòng</span>
+        </button>
+        <button class="nav-item" data-tab="baoquan">
+          <i class="fa-solid fa-temperature-three-quarters"></i>
+          <span>Giám Sát Bảo Quản GSP</span>
+        </button>
+        <button class="nav-item" data-tab="bieumau">
+          <i class="fa-solid fa-print"></i>
+          <span>Biểu Mẫu Chuẩn Theo QĐ</span>
+        </button>
+        <button class="nav-item" data-tab="baocao">
+          <i class="fa-solid fa-file-invoice-dollar"></i>
+          <span>Báo Cáo NXT & Dự Trù</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sop-status-pill">
+          <span class="pulse-dot"></span>
+          <span>Hệ thống đạt chuẩn QĐ 651</span>
+        </div>
+        <div class="storage-meta">
+          <span>Quy tắc: <b>FEFO / FIFO</b></span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="main-content">
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 id="pageTitle" class="page-title">Tổng quan Kho Vật tư Y tế</h1>
+          <p id="pageDesc" class="page-desc">Theo dõi luân chuyển, hạn dùng FEFO và kiểm soát quy trình nhập - xuất theo quy định</p>
+        </div>
+        <div class="topbar-right">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="globalSearchInput" placeholder="Tìm vật tư, mã, số lô, số phiếu...">
+          </div>
+          <button class="btn btn-primary" id="btnQuickAction">
+            <i class="fa-solid fa-plus"></i> <span id="quickActionLabel">Lập Phiếu Mới</span>
+          </button>
+          <button class="btn btn-outline" id="btnSampleReset" title="Đặt lại dữ liệu mẫu chuẩn BV">
+            <i class="fa-solid fa-rotate-right"></i> Dữ liệu mẫu
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENT PANELS -->
+      <div class="content-body">
+
+        <!-- ================= TAB 1: DASHBOARD ================= -->
+        <section id="tab-dashboard" class="tab-pane active">
+          <!-- KPI Stats -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-icon blue"><i class="fa-solid fa-boxes-stacked"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Tổng mặt hàng VTYT</span>
+                <h3 class="kpi-value" id="kpiTotalItems">0</h3>
+                <span class="kpi-sub">BHYT & Thu phí</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-icon emerald"><i class="fa-solid fa-money-bill-transfer"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Tổng giá trị tồn kho</span>
+                <h3 class="kpi-value" id="kpiTotalValue">0 đ</h3>
+                <span class="kpi-sub">Giá trúng thầu BV</span>
+              </div>
+            </div>
+
+            <div class="kpi-card alert-warning">
+              <div class="kpi-icon amber"><i class="fa-solid fa-calendar-xmark"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Cảnh báo Cận Hạn (FEFO)</span>
+                <h3 class="kpi-value" id="kpiExpiringCount">0</h3>
+                <span class="kpi-sub text-amber"><i class="fa-solid fa-triangle-exclamation"></i> &lt; 90 ngày cần ưu tiên xuất</span>
+              </div>
+            </div>
+
+            <div class="kpi-card alert-danger">
+              <div class="kpi-icon rose"><i class="fa-solid fa-triangle-exclamation"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Tồn dưới định mức tối thiểu</span>
+                <h3 class="kpi-value" id="kpiLowStockCount">0</h3>
+                <span class="kpi-sub text-rose"><i class="fa-solid fa-bell"></i> Cần lập dự trù nhập hàng</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Environment & Workflow Status -->
+          <div class="dashboard-row">
+            <div class="card col-8">
+              <div class="card-header">
+                <div class="card-title">
+                  <i class="fa-solid fa-timeline"></i> Tiến độ các phiếu Nhập - Xuất đang xử lý
+                </div>
+                <span class="badge badge-info">Theo chuẩn 651/QĐ-BVPN</span>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Mã Phiếu</th>
+                        <th>Loại Quy Trình</th>
+                        <th>Đơn Vị / Khoa</th>
+                        <th>Bước Hiện Tại</th>
+                        <th>Trạng Thái</th>
+                        <th>Thao Tác</th>
+                      </tr>
+                    </thead>
+                    <tbody id="dashWorkflowTableBody">
+                      <!-- Render dynamic -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="card col-4">
+              <div class="card-header">
+                <div class="card-title">
+                  <i class="fa-solid fa-temperature-low"></i> Điều Kiện Bảo Quản (GSP)
+                </div>
+                <span class="live-dot" title="Đang cập nhật thời gian thực"></span>
+              </div>
+              <div class="card-body">
+                <div class="gsp-condition-list" id="dashGspList">
+                  <!-- Render dynamic -->
+                </div>
+                <div class="gsp-footer-note">
+                  <i class="fa-solid fa-circle-info"></i> Độ ẩm tương đối toàn kho duy trì &le; 70% theo mục 5.3 QĐ 651.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FEFO Urgent Priority Table -->
+          <div class="card mt-4">
+            <div class="card-header">
+              <div class="card-title text-amber">
+                <i class="fa-solid fa-stopwatch"></i> Bảng Theo Dõi FEFO - Lô Hàng Cận Hạn Cần Ưu Tiên Xuất Trước
+              </div>
+              <span class="badge badge-warning">Nguyên tắc FEFO bắt buộc</span>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Mã VTTH</th>
+                      <th>Tên Vật Tư Tiêu Hao Y Tế</th>
+                      <th>Quy Cách / ĐVT</th>
+                      <th>Số Lô (Batch)</th>
+                      <th>Hạn Dùng (HSD)</th>
+                      <th>Số Ngày Còn Lại</th>
+                      <th>Số Lượng Tồn</th>
+                      <th>Mức Độ Cảnh Báo</th>
+                      <th>Đề Xuất Xử Lý</th>
+                    </tr>
+                  </thead>
+                  <tbody id="fefoTableBody">
+                    <!-- Dynamic -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB 2: QUY TRÌNH NHẬP KHO (7 BƯỚC) ================= -->
+        <section id="tab-nhapkho" class="tab-pane">
+          <div class="sop-banner">
+            <div class="sop-banner-text">
+              <h2>Quy Trình Nhập Kho Vật Tư Tiêu Hao Y Tế Chuẩn (7 Bước)</h2>
+              <p>Thực hiện theo Mục 5.2 - Quyết định số 651/QĐ-BVPN của Bệnh viện quận Phú Nhuận</p>
+            </div>
+            <button class="btn btn-light" id="btnCreateImportRequest">
+              <i class="fa-solid fa-file-circle-plus"></i> Khởi Tạo Quy Trình Nhập Kho Mới
+            </button>
+          </div>
+
+          <!-- 7 Steps Visual Stepper -->
+          <div class="stepper-container">
+            <div class="step-card" data-step="1">
+              <div class="step-num">B1</div>
+              <div class="step-info">
+                <h4>Lập kế hoạch đặt hàng</h4>
+                <p>Thủ kho (Ngày 1-5 hàng tháng căn cứ NXT, tồn kho, HĐ thầu)</p>
+              </div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step-card" data-step="2">
+              <div class="step-num">B2</div>
+              <div class="step-info">
+                <h4>Đặt hàng NCC</h4>
+                <p>Phiếu đặt hàng gửi NCC, đối chiếu BHYT thanh toán</p>
+              </div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step-card" data-step="3">
+              <div class="step-num">B3</div>
+              <div class="step-info">
+                <h4>Hội đồng kiểm nhập</h4>
+                <p>Thủ kho + Kế toán dược + HĐ kiểm nhập: ĐVT, Lô, HSD, Cảm quan</p>
+              </div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step-card" data-step="4">
+              <div class="step-num">B4</div>
+              <div class="step-info">
+                <h4>Lập Sổ kiểm nhập</h4>
+                <p>Ký biên bản kiểm nhập hàng hóa, đính kèm hóa đơn</p>
+              </div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step-card" data-step="5">
+              <div class="step-num">B5</div>
+              <div class="step-info">
+                <h4>Kiểm tra hóa đơn</h4>
+                <p>Kế toán dược / P. TCKT duyệt giá thầu & in Phiếu nhập kho</p>
+              </div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step-card" data-step="6">
+              <div class="step-num">B6</div>
+              <div class="step-info">
+                <h4>Hoàn tất thủ tục</h4>
+                <p>Ký duyệt Trưởng P. VTTBYT & P. TCKT, lưu hồ sơ 1 năm</p>
+              </div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step-card" data-step="7">
+              <div class="step-num">B7</div>
+              <div class="step-info">
+                <h4>Đề nghị thanh toán</h4>
+                <p>Bộ chứng từ thanh toán chuyển giao P. TCKT</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter & List of Import Orders -->
+          <div class="card mt-4">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa-solid fa-list-check"></i> Danh Sách Lô Hàng Đang Trong Quy Trình Nhập Kho
+              </div>
+              <div class="filter-group">
+                <select id="importFilterStep" class="form-select-sm">
+                  <option value="">Tất cả các bước (B1 - B7)</option>
+                  <option value="1">Bước 1: Kế hoạch đặt hàng</option>
+                  <option value="2">Bước 2: Chờ NCC giao hàng</option>
+                  <option value="3">Bước 3: Hội đồng kiểm nhập</option>
+                  <option value="4">Bước 4: Đã lập sổ kiểm nhập</option>
+                  <option value="5">Bước 5: Kế toán kiểm tra hóa đơn</option>
+                  <option value="6">Bước 6: Chờ Trưởng P. VTTBYT duyệt</option>
+                  <option value="7">Bước 7: Hoàn tất & Đề nghị thanh toán</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Số Phiếu</th>
+                      <th>Nhà Cung Cấp</th>
+                      <th>Hợp Đồng / Gói Thầu</th>
+                      <th>Ngày Lập</th>
+                      <th>Số Mặt Hàng</th>
+                      <th>Tổng Giá Trị</th>
+                      <th>Bước Quy Trình</th>
+                      <th>Người Đang Xử Lý</th>
+                      <th>Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="importTableBody">
+                    <!-- Dynamic -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB 3: QUY TRÌNH XUẤT KHO (6 BƯỚC) ================= -->
+        <section id="tab-xuatkho" class="tab-pane">
+          <div class="sop-banner blue-grad">
+            <div class="sop-banner-text">
+              <h2>Quy Trình Cấp Phát - Xuất Kho Cho Các Khoa/Phòng (6 Bước)</h2>
+              <p>Thực hiện theo Mục 5.4 & Mẫu số 01, 02 - Quyết định số 651/QĐ-BVPN</p>
+            </div>
+            <button class="btn btn-light" id="btnCreateExportRequest">
+              <i class="fa-solid fa-hand-holding-medical"></i> Lập Phiếu Lĩnh VTTH Mới (Mẫu 01)
+            </button>
+          </div>
+
+          <!-- 6 Steps Visual Stepper -->
+          <div class="stepper-container">
+            <div class="step-card" data-step="1">
+              <div class="step-num">X1</div>
+              <div class="step-info">
+                <h4>Lập Phiếu Lĩnh</h4>
+                <p>Điều dưỡng / KTV khoa lập Mẫu 01 theo y lệnh/nhu cầu, Trưởng khoa duyệt</p>
+              </div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step-card" data-step="2">
+              <div class="step-num">X2</div>
+              <div class="step-info">
+                <h4>Xác nhận phiếu lĩnh</h4>
+                <p>Thủ kho kiểm tra tồn kho, danh mục, thông báo khoa nếu thiếu</p>
+              </div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step-card" data-step="3">
+              <div class="step-num">X3</div>
+              <div class="step-info">
+                <h4>Xét duyệt P.VTTBYT</h4>
+                <p>Trưởng phòng VTTBYT kiểm tra tính hợp lệ & ký duyệt điện tử</p>
+              </div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step-card" data-step="4">
+              <div class="step-num">X4</div>
+              <div class="step-info">
+                <h4>Cấp phát theo FEFO</h4>
+                <p>Thủ kho soạn hàng chuẩn hạn dùng, in Chứng từ xuất kho (Mẫu 02)</p>
+              </div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step-card" data-step="5">
+              <div class="step-num">X5</div>
+              <div class="step-info">
+                <h4>Giao nhận VTTHYT</h4>
+                <p>Đối chiếu thực tế, ký nhận 2 bên trên chứng từ xuất kho</p>
+              </div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step-card" data-step="6">
+              <div class="step-num">X6</div>
+              <div class="step-info">
+                <h4>Cập nhật Thẻ kho</h4>
+                <p>Tự động ghi giảm tồn, đồng bộ số liệu NXT báo cáo định kỳ</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter & List of Export Requests -->
+          <div class="card mt-4">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa-solid fa-dolly"></i> Danh Sách Phiếu Lĩnh & Chứng Từ Xuất Kho
+              </div>
+              <div class="filter-group">
+                <select id="exportFilterDept" class="form-select-sm">
+                  <option value="">Tất cả khoa phòng</option>
+                  <!-- Render dynamic -->
+                </select>
+                <select id="exportFilterStatus" class="form-select-sm">
+                  <option value="">Tất cả trạng thái</option>
+                  <option value="1">Bước 1: Chờ Trưởng khoa duyệt</option>
+                  <option value="2">Bước 2: Chờ Thủ kho xác nhận</option>
+                  <option value="3">Bước 3: Chờ Trưởng P.VTTBYT duyệt</option>
+                  <option value="4">Bước 4: Đang cấp phát / In CT</option>
+                  <option value="5">Bước 5: Chờ ký giao nhận</option>
+                  <option value="6">Bước 6: Đã hoàn tất & Trừ kho</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Số Phiếu Lĩnh</th>
+                      <th>Khoa / Phòng Lĩnh</th>
+                      <th>Người Lập</th>
+                      <th>Ngày Lập</th>
+                      <th>Số Mặt Hàng</th>
+                      <th>Bước Quy Trình</th>
+                      <th>Trạng Thái</th>
+                      <th>Thao Tác Theo Vai Trò</th>
+                    </tr>
+                  </thead>
+                  <tbody id="exportTableBody">
+                    <!-- Dynamic -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB 4: DANH MỤC VẬT TƯ & LÔ HẠN ================= -->
+        <section id="tab-danhmuc" class="tab-pane">
+          <div class="panel-header-bar">
+            <div>
+              <h2>Quản Lý Danh Mục Vật Tư Tiêu Hao & Chi Tiết Lô/HSD</h2>
+              <p>Kiểm soát điều kiện bảo quản GSP, ngưỡng tồn an toàn và số lô trúng thầu</p>
+            </div>
+            <button class="btn btn-primary" id="btnAddNewItem">
+              <i class="fa-solid fa-plus"></i> Thêm Mặt Hàng Mới
+            </button>
+          </div>
+
+          <div class="filter-card">
+            <div class="row-flex">
+              <div class="form-group flex-2">
+                <label>Tìm kiếm vật tư:</label>
+                <input type="text" id="itemSearchQuery" class="form-control" placeholder="Tên vật tư, mã VT, số đăng ký...">
+              </div>
+              <div class="form-group">
+                <label>Phân loại:</label>
+                <select id="itemFilterCategory" class="form-control">
+                  <option value="">Tất cả phân loại</option>
+                  <option value="VTTH">Vật tư tiêu hao</option>
+                  <option value="HOACHAT">Hóa chất xét nghiệm</option>
+                  <option value="SINHPHAM">Sinh phẩm y tế</option>
+                  <option value="DUNGVIEN">Bông băng gạc / Vô trùng</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Điều kiện bảo quản:</label>
+                <select id="itemFilterStorage" class="form-control">
+                  <option value="">Tất cả điều kiện</option>
+                  <option value="PHONG">Nhiệt độ phòng (15-25°C)</option>
+                  <option value="MAT">Kho mát (8-15°C)</option>
+                  <option value="LANH">Kho lạnh (&le; 8°C)</option>
+                  <option value="TULANH">Tủ lạnh (2-8°C)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Trạng thái tồn:</label>
+                <select id="itemFilterStockStatus" class="form-control">
+                  <option value="">Tất cả</option>
+                  <option value="LOW">Cảnh báo dưới định mức</option>
+                  <option value="FEFO">Có lô cận hạn (&lt; 90 ngày)</option>
+                  <option value="GOOD">Đủ tồn kho an toàn</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-3">
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Mã VT</th>
+                      <th>Tên Vật Tư Tiêu Hao Y Tế</th>
+                      <th>Phân Loại</th>
+                      <th>Đơn Vị</th>
+                      <th>Bảo Quản GSP</th>
+                      <th>Tổng Tồn</th>
+                      <th>Định Mức Tồn</th>
+                      <th>Lô Hàng Cận Date Nhất</th>
+                      <th>Đơn Giá Thầu</th>
+                      <th>Hành Động</th>
+                    </tr>
+                  </thead>
+                  <tbody id="catalogTableBody">
+                    <!-- Dynamic -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB 5: TỦ TRỰC CÁC KHOA PHÒNG ================= -->
+        <section id="tab-tutruc" class="tab-pane">
+          <div class="panel-header-bar">
+            <div>
+              <h2>Quản Lý Tủ Trực Vật Tư Tại Các Khoa / Phòng</h2>
+              <p>Theo dõi tồn thực tế, bù cơ số tủ trực và hoàn trả theo Mục II & 5.3 QĐ 651</p>
+            </div>
+            <div class="header-action-group">
+              <select id="deptSelectFilter" class="form-select">
+                <!-- Dynamic Depts -->
+              </select>
+              <button class="btn btn-outline" id="btnAuditCabinet">
+                <i class="fa-solid fa-clipboard-check"></i> Kiểm Kê Định Kỳ Tủ Trực (Hàng Tháng)
+              </button>
+            </div>
+          </div>
+
+          <div class="card mt-3">
+            <div class="card-header">
+              <div class="card-title" id="cabinetDeptTitle">
+                <i class="fa-solid fa-hospital-user"></i> Cơ số tủ trực Khoa Cấp Cứu
+              </div>
+              <span class="badge badge-primary" id="cabinetItemCount">0 mặt hàng</span>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Mã VT</th>
+                      <th>Tên Vật Tư Tiêu Hao</th>
+                      <th>ĐVT</th>
+                      <th>Cơ Số Định Mức</th>
+                      <th>Hiện Tồn Thực Tế</th>
+                      <th>Chênh Lệch</th>
+                      <th>Tình Trạng</th>
+                      <th>Hạn Dùng Cận Nhất</th>
+                      <th>Đề Xuất Lĩnh Bù</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cabinetTableBody">
+                    <!-- Dynamic -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB 6: GIÁM SÁT BẢO QUẢN GSP ================= -->
+        <section id="tab-baoquan" class="tab-pane">
+          <div class="panel-header-bar">
+            <div>
+              <h2>Hệ Thống Giám Sát Môi Trường & Bảo Quản Kho GSP</h2>
+              <p>Mục 5.3: Quy định nhiệt độ phòng (15-25°C), kho mát (8-15°C), kho lạnh (&le;8°C), tủ lạnh (2-8°C), độ ẩm &le;70%</p>
+            </div>
+            <button class="btn btn-primary" id="btnLogTemp">
+              <i class="fa-solid fa-pen-to-square"></i> Ghi Nhật Ký Nhiệt Ẩm Kế
+            </button>
+          </div>
+
+          <div class="storage-grid mt-3">
+            <!-- Room 1 -->
+            <div class="storage-zone-card" id="zone-ambient">
+              <div class="zone-header">
+                <div class="zone-name">
+                  <i class="fa-solid fa-warehouse"></i>
+                  <span>Kho Thường (VTYT Tiêu Hao)</span>
+                </div>
+                <span class="status-badge ok" id="badge-ambient">Đạt chuẩn</span>
+              </div>
+              <div class="zone-metrics">
+                <div class="metric-box">
+                  <span class="m-label">Nhiệt độ hiện tại</span>
+                  <div class="m-val"><span id="temp-ambient">22.4</span>°C</div>
+                  <span class="m-range">Quy chuẩn: 15°C - 25°C (max 30°C)</span>
+                </div>
+                <div class="metric-box">
+                  <span class="m-label">Độ ẩm tương đối</span>
+                  <div class="m-val"><span id="hum-ambient">62</span>%</div>
+                  <span class="m-range">Quy chuẩn: &le; 70%</span>
+                </div>
+              </div>
+              <div class="zone-footer">
+                <span>Vật tư: Băng gạc, bơm tiêm, dây truyền, găng tay...</span>
+              </div>
+            </div>
+
+            <!-- Room 2 -->
+            <div class="storage-zone-card" id="zone-cool">
+              <div class="zone-header">
+                <div class="zone-name">
+                  <i class="fa-solid fa-fan"></i>
+                  <span>Kho Mát</span>
+                </div>
+                <span class="status-badge ok" id="badge-cool">Đạt chuẩn</span>
+              </div>
+              <div class="zone-metrics">
+                <div class="metric-box">
+                  <span class="m-label">Nhiệt độ hiện tại</span>
+                  <div class="m-val"><span id="temp-cool">11.8</span>°C</div>
+                  <span class="m-range">Quy chuẩn: 8°C - 15°C</span>
+                </div>
+                <div class="metric-box">
+                  <span class="m-label">Độ ẩm tương đối</span>
+                  <div class="m-val"><span id="hum-cool">58</span>%</div>
+                  <span class="m-range">Quy chuẩn: &le; 70%</span>
+                </div>
+              </div>
+              <div class="zone-footer">
+                <span>Vật tư: Keo sinh học, vật liệu nha khoa nhạy nhiệt...</span>
+              </div>
+            </div>
+
+            <!-- Room 3 -->
+            <div class="storage-zone-card" id="zone-cold">
+              <div class="zone-header">
+                <div class="zone-name">
+                  <i class="fa-solid fa-snowflake"></i>
+                  <span>Kho Lạnh</span>
+                </div>
+                <span class="status-badge ok" id="badge-cold">Đạt chuẩn</span>
+              </div>
+              <div class="zone-metrics">
+                <div class="metric-box">
+                  <span class="m-label">Nhiệt độ hiện tại</span>
+                  <div class="m-val"><span id="temp-cold">5.5</span>°C</div>
+                  <span class="m-range">Quy chuẩn: &le; 8°C</span>
+                </div>
+                <div class="metric-box">
+                  <span class="m-label">Độ ẩm tương đối</span>
+                  <div class="m-val"><span id="hum-cold">55</span>%</div>
+                  <span class="m-range">Quy chuẩn: &le; 70%</span>
+                </div>
+              </div>
+              <div class="zone-footer">
+                <span>Vật tư: Vật tư cấy ghép bảo quản lạnh</span>
+              </div>
+            </div>
+
+            <!-- Room 4 -->
+            <div class="storage-zone-card" id="zone-fridge">
+              <div class="zone-header">
+                <div class="zone-name">
+                  <i class="fa-solid fa-vial-circle-check"></i>
+                  <span>Tủ Lạnh Hóa Chất & Sinh Phẩm XN</span>
+                </div>
+                <span class="status-badge ok" id="badge-fridge">Đạt chuẩn</span>
+              </div>
+              <div class="zone-metrics">
+                <div class="metric-box">
+                  <span class="m-label">Nhiệt độ hiện tại</span>
+                  <div class="m-val"><span id="temp-fridge">4.2</span>°C</div>
+                  <span class="m-range">Quy chuẩn: 2°C - 8°C</span>
+                </div>
+                <div class="metric-box">
+                  <span class="m-label">Độ ẩm buồng lạnh</span>
+                  <div class="m-val"><span id="hum-fridge">48</span>%</div>
+                  <span class="m-range">Quy chuẩn: Khô ráo, &le; 70%</span>
+                </div>
+              </div>
+              <div class="zone-footer">
+                <span>Vật tư: Hóa chất sinh hóa, Test kit, Reagents XN</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rules Summary -->
+          <div class="card mt-4">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa-solid fa-book-medical"></i> Quy Tắc Bốc Xếp & Bảo Quản (Mục 5.3 QĐ 651)
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="rules-grid">
+                <div class="rule-item">
+                  <i class="fa-solid fa-arrow-down-short-wide"></i>
+                  <div>
+                    <h5>Nguyên tắc FIFO & FEFO</h5>
+                    <p>Nhập trước xuất trước (FIFO) và Hết hạn trước xuất trước (FEFO) là bắt buộc trong mọi thao tác xuất kho.</p>
+                  </div>
+                </div>
+                <div class="rule-item">
+                  <i class="fa-solid fa-cubes-stacked"></i>
+                  <div>
+                    <h5>Sắp xếp kệ và pallet</h5>
+                    <p>Hàng thùng, hàng nặng, hàng nước xếp dưới pallet; hàng lẻ, hàng nhẹ xếp trên kệ; chống cháy nổ, mối mọt, phải có lối đi thông thoáng.</p>
+                  </div>
+                </div>
+                <div class="rule-item">
+                  <i class="fa-solid fa-shield-halved"></i>
+                  <div>
+                    <h5>Bảo vệ tài sản kho</h5>
+                    <p>Cập nhật thẻ kho hàng ngày, kiểm kê định kỳ 1 lần/tháng vào cuối tháng, bảo quản an toàn hóa chất nhạy cảm.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB 7: BIỂU MẪU CHUẨN THEO QUYẾT ĐỊNH ================= -->
+        <section id="tab-bieumau" class="tab-pane">
+          <div class="panel-header-bar">
+            <div>
+              <h2>Hệ Thống Biểu Mẫu Chuẩn Theo Quyết Định 651/QĐ-BVPN</h2>
+              <p>Chọn biểu mẫu để xem trước và in ấn trực tiếp chuẩn khổ giấy hành chính A4</p>
+            </div>
+            <div class="header-action-group">
+              <button class="btn btn-primary" onclick="window.print()">
+                <i class="fa-solid fa-print"></i> In Biểu Mẫu Hiện Tại (A4)
+              </button>
+            </div>
+          </div>
+
+          <!-- Template Switcher Tabs -->
+          <div class="template-selector-bar">
+            <button class="tpl-btn active" data-tpl="phieulinh">
+              <i class="fa-solid fa-file-medical"></i> Mẫu 01: Phiếu Lĩnh Vật Dụng Y Tế Tiêu Hao (Trang 9)
+            </button>
+            <button class="tpl-btn" data-tpl="chungtuxuat">
+              <i class="fa-solid fa-file-invoice"></i> Mẫu 02: Chứng Từ Xuất Kho (Trang 10)
+            </button>
+            <button class="tpl-btn" data-tpl="baocaodutru">
+              <i class="fa-solid fa-file-lines"></i> Mẫu 03: Báo Cáo Sử Dụng & Dự Trù Tháng (Trang 11)
+            </button>
+            <button class="tpl-btn" data-tpl="sohoidong">
+              <i class="fa-solid fa-users-viewfinder"></i> Biên Bản Hội Đồng Kiểm Nhập
+            </button>
+          </div>
+
+          <!-- Print Preview Sheet -->
+          <div class="print-sheet-container">
+            <div class="a4-sheet" id="printSheetArea">
+              <!-- Render template content -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB 8: BÁO CÁO NXT & DỰ TRÙ ================= -->
+        <section id="tab-baocao" class="tab-pane">
+          <div class="panel-header-bar">
+            <div>
+              <h2>Báo Cáo Xuất - Nhập - Tồn & Dự Trù Định Kỳ</h2>
+              <p>Thực hiện từ ngày 1 - 5 hàng tháng theo Mục 5.2 & Mục 5.4 QĐ 651</p>
+            </div>
+            <div class="header-action-group">
+              <button class="btn btn-outline" id="btnExportExcel">
+                <i class="fa-solid fa-file-excel"></i> Xuất Báo Cáo
+              </button>
+              <button class="btn btn-primary" id="btnPreviewReportForm">
+                <i class="fa-solid fa-eye"></i> Xem Mẫu Báo Cáo 03
+              </button>
+            </div>
+          </div>
+
+          <div class="filter-card">
+            <div class="row-flex">
+              <div class="form-group">
+                <label>Tháng báo cáo:</label>
+                <input type="month" id="reportMonth" class="form-control" value="2026-09">
+              </div>
+              <div class="form-group">
+                <label>Khoa / Đơn vị:</label>
+                <select id="reportDept" class="form-control">
+                  <option value="ALL">Toàn Bệnh Viện (Kho Tổng VTTBYT)</option>
+                  <!-- Dynamic -->
+                </select>
+              </div>
+              <div class="form-group flex-2">
+                <label>Nhóm vật tư:</label>
+                <select id="reportCategory" class="form-control">
+                  <option value="">Tất cả danh mục</option>
+                  <option value="VTTH">Vật tư tiêu hao y tế</option>
+                  <option value="HOACHAT">Hóa chất xét nghiệm</option>
+                </select>
+              </div>
+              <div class="form-group align-end">
+                <button class="btn btn-primary" id="btnGenerateReport">
+                  <i class="fa-solid fa-filter"></i> Tổng Hợp Số Liệu
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-3">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa-solid fa-table-list"></i> Bảng Báo Cáo Xuất - Nhập - Tồn Chi Tiết (Có Dự Trù Tháng Tới)
+              </div>
+              <span class="badge badge-info" id="reportRecordCount">0 dòng dữ liệu</span>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>STT</th>
+                      <th>Mã VTTH</th>
+                      <th>Tên Vật Tư Tiêu Hao Y Tế</th>
+                      <th>Đơn Vị</th>
+                      <th>Tồn Đầu Kỳ</th>
+                      <th>Nhập Trong Kỳ</th>
+                      <th>Xuất Trong Kỳ</th>
+                      <th>Tồn Cuối Kỳ</th>
+                      <th>Dự Trù Tháng Tới</th>
+                      <th>Hạn Dùng Cận Nhất</th>
+                      <th>Ghi Chú</th>
+                    </tr>
+                  </thead>
+                  <tbody id="nxtReportTableBody">
+                    <!-- Dynamic -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL: TẠO QUY TRÌNH NHẬP KHO (7 BƯỚC) -->
+  <div class="modal-backdrop" id="modalImportWorkflow">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 id="modalImportTitle"><i class="fa-solid fa-arrow-down-to-bracket"></i> Tạo Đơn Hàng / Kế Hoạch Nhập Kho</h3>
+        <button class="modal-close" onclick="closeModal('modalImportWorkflow')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Số Phiếu Nhập / Dự Trù: <span class="req">*</span></label>
+            <input type="text" id="impDocNum" class="form-control" readonly>
+          </div>
+          <div class="form-group">
+            <label>Nhà Cung Cấp: <span class="req">*</span></label>
+            <input type="text" id="impSupplier" class="form-control" placeholder="Tên công ty cung cấp trúng thầu">
+          </div>
+          <div class="form-group">
+            <label>Số Hợp Đồng / Gói Thầu: <span class="req">*</span></label>
+            <input type="text" id="impContract" class="form-control" placeholder="VD: HĐ-08/2026/VTTBYT-BVPN">
+          </div>
+          <div class="form-group">
+            <label>Số Hóa Đơn Tài Chính:</label>
+            <input type="text" id="impInvoiceNum" class="form-control" placeholder="Số hóa đơn GTGT">
+          </div>
+        </div>
+
+        <h4 class="section-divider"><i class="fa-solid fa-cart-flatbed"></i> Danh Sách Vật Tư Nhập</h4>
+        <div class="table-responsive">
+          <table class="data-table-form" id="importItemsTable">
+            <thead>
+              <tr>
+                <th width="35%">Tên Vật Tư Tiêu Hao</th>
+                <th width="12%">ĐVT</th>
+                <th width="15%">Số Lô (Lot)</th>
+                <th width="15%">HSD</th>
+                <th width="10%">Số Lượng</th>
+                <th width="13%">Đơn Giá</th>
+                <th width="5%"></th>
+              </tr>
+            </thead>
+            <tbody id="importItemsTableBody">
+              <!-- Dynamic Rows -->
+            </tbody>
+          </table>
+        </div>
+        <button class="btn btn-sm btn-outline mt-2" id="btnAddImportRow">
+          <i class="fa-solid fa-plus"></i> Thêm Mặt Hàng
+        </button>
+
+        <div class="note-box mt-3">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span><b>Lưu ý theo QĐ 651:</b> Nhận hàng phải có mặt <b>Hội đồng kiểm nhập</b> (Thủ kho + Kế toán dược + Thành viên HĐ) đối chiếu số lô, HSD, điều kiện bảo quản và cảm quan bao bì trước khi lập Sổ kiểm nhập.</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modalImportWorkflow')">Hủy</button>
+        <button class="btn btn-primary" id="btnSaveImportDoc">Lưu & Chuyển Bước Tiếp Theo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: HỘI ĐỒNG KIỂM NHẬP (BƯỚC 3-4) -->
+  <div class="modal-backdrop" id="modalInspection">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-clipboard-check"></i> Biên Bản Hội Đồng Kiểm Nhập Hàng Hóa (Bước 3 & 4)</h3>
+        <button class="modal-close" onclick="closeModal('modalInspection')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="alert-info-box">
+          <b>Quy định kiểm nhập:</b> Kiểm tra đối chiếu hàng vào so với hóa đơn & gói thầu: tên VTTHYT, tiêu chuẩn kỹ thuật, ĐVT, số đăng ký, số lượng, giá thành, bao bì đóng gói, số lô, hạn dùng và điều kiện bảo quản. Hàng không đạt yêu cầu phải <b>biệt trữ</b> và hoàn trả nhà cung cấp.
+        </div>
+
+        <div class="inspection-members-grid mt-3">
+          <div class="member-box">
+            <label>1. Đại diện Ban Giám Đốc / Trưởng P. VTTBYT:</label>
+            <input type="text" id="inspectMember1" class="form-control" value="DS. Hoàng Thị Minh Hà">
+          </div>
+          <div class="member-box">
+            <label>2. Kế toán dược (P. TCKT):</label>
+            <input type="text" id="inspectMember2" class="form-control" value="CN. Nguyễn Thu Trang">
+          </div>
+          <div class="member-box">
+            <label>3. Thủ kho VTTBYT:</label>
+            <input type="text" id="inspectMember3" class="form-control" value="DS. Trần Văn An">
+          </div>
+        </div>
+
+        <h4 class="mt-4"><i class="fa-solid fa-check-double"></i> Đánh Giá Kiểm Nhập Danh Sách Mặt Hàng:</h4>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Vật Tư</th>
+                <th>Số Lô / HSD</th>
+                <th>SL Hóa Đơn</th>
+                <th>SL Thực Nhận</th>
+                <th>Bao Bì & Cảm Quan</th>
+                <th>Bảo Quản GSP</th>
+                <th>Kết Luận</th>
+              </tr>
+            </thead>
+            <tbody id="inspectItemsTableBody">
+              <!-- Render items -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="form-group mt-3">
+          <label>Ý Kiến / Kết Luận Chung Của Hội Đồng Kiểm Nhập:</label>
+          <textarea id="inspectConclusion" class="form-control" rows="2">Các mặt hàng đầy đủ quy cách, nguyên vẹn tem nhãn, hạn dùng đạt chuẩn > 80%, nhiệt độ giao hàng đạt chuẩn GSP. Đồng ý nhập kho.</textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modalInspection')">Đóng</button>
+        <button class="btn btn-success" id="btnConfirmInspection">
+          <i class="fa-solid fa-file-signature"></i> Ký Xác Nhận HĐ Kiểm Nhập & Lập Sổ Kiểm Nhập
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: LẬP PHIẾU LĨNH VẬT DỤNG Y TẾ TIÊU HAO (MẪU 01 - BƯỚC 1 XUẤT KHO) -->
+  <div class="modal-backdrop" id="modalExportWorkflow">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 id="modalExportTitle"><i class="fa-solid fa-file-medical"></i> Lập Phiếu Lĩnh Vật Dụng Y Tế Tiêu Hao (Mẫu 01)</h3>
+        <button class="modal-close" onclick="closeModal('modalExportWorkflow')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Số Phiếu Lĩnh: <span class="req">*</span></label>
+            <input type="text" id="expDocNum" class="form-control" readonly>
+          </div>
+          <div class="form-group">
+            <label>Khoa / Phòng Lĩnh: <span class="req">*</span></label>
+            <select id="expDeptSelect" class="form-control">
+              <!-- Dynamic Depts -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Người Lĩnh (ĐD/KTV phụ trách): <span class="req">*</span></label>
+            <input type="text" id="expRequester" class="form-control" value="ĐD. Lê Thị Mai">
+          </div>
+          <div class="form-group">
+            <label>Mục Đích Lĩnh: <span class="req">*</span></label>
+            <select id="expPurpose" class="form-control">
+              <option value="TUTRUC">Bù cơ số tủ trực cấp cứu khoa</option>
+              <option value="YLENH">Theo y lệnh điều trị bệnh nhân</option>
+              <option value="PHAUTHUAT">Phục vụ ca phẫu thuật / thủ thuật</option>
+              <option value="DOTXUAT">Lĩnh đột xuất bổ sung</option>
+            </select>
+          </div>
+        </div>
+
+        <h4 class="section-divider"><i class="fa-solid fa-list-ol"></i> Danh Mục Vật Tư Tiêu Hao Yêu Cầu</h4>
+        <div class="table-responsive">
+          <table class="data-table-form" id="exportItemsTable">
+            <thead>
+              <tr>
+                <th width="45%">Tên Vật Tư Tiêu Hao Y Tế</th>
+                <th width="15%">Đơn Vị</th>
+                <th width="15%">Hiện Tồn Kho</th>
+                <th width="20%">Số Lượng Yêu Cầu</th>
+                <th width="5%"></th>
+              </tr>
+            </thead>
+            <tbody id="exportItemsTableBody">
+              <!-- Dynamic Rows -->
+            </tbody>
+          </table>
+        </div>
+        <button class="btn btn-sm btn-outline mt-2" id="btnAddExportRow">
+          <i class="fa-solid fa-plus"></i> Thêm Mặt Hàng Lĩnh
+        </button>
+
+        <div class="note-box mt-3">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span><b>Lưu ý quy trình 651:</b> Phiếu lĩnh sau khi Trưởng khoa duyệt sẽ được <b>Thủ kho</b> xác nhận số lượng tồn, sau đó chuyển <b>Trưởng phòng VTTBYT</b> ký xét duyệt trước khi cấp phát và xuất kho theo nguyên tắc <b>FEFO</b>.</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modalExportWorkflow')">Hủy</button>
+        <button class="btn btn-primary" id="btnSaveExportRequest">Gửi Phiếu Lĩnh Trình Duyệt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CẤP PHÁT HÀNG THEO NGUYÊN TẮC FEFO (BƯỚC 4 XUẤT KHO) -->
+  <div class="modal-backdrop" id="modalFefoAllocation">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-boxes-packing"></i> Cấp Phát Kho Theo Chuẩn FEFO & In Chứng Từ Xuất (Bước 4 & 5)</h3>
+        <button class="modal-close" onclick="closeModal('modalFefoAllocation')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="alert-info-box">
+          <b>Thuật toán FEFO (First Expired First Out):</b> Hệ thống tự động chọn các lô hàng có <b>hạn dùng gần nhất</b> để xuất trước, tránh tồn đọng gây cận date và lãng phí vật tư y tế.
+        </div>
+
+        <div class="mt-3">
+          <h4 id="fefoAllocTitle">Phiếu lĩnh số: ...</h4>
+          <p id="fefoAllocDept">Khoa lĩnh: ...</p>
+        </div>
+
+        <div class="table-responsive mt-2">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tên Vật Tư</th>
+                <th>ĐVT</th>
+                <th>SL Yêu Cầu</th>
+                <th>Lô Xuất (FEFO Tự Động)</th>
+                <th>Hạn Dùng Lô</th>
+                <th>SL Thực Xuất</th>
+                <th>Đơn Giá</th>
+                <th>Thành Tiền</th>
+              </tr>
+            </thead>
+            <tbody id="fefoAllocItemsTableBody">
+              <!-- Render items -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="row-flex mt-3 justify-between align-center">
+          <div>
+            <b>Tổng thành tiền xuất kho: </b>
+            <span class="text-primary text-xl font-bold" id="fefoTotalAmount">0 đ</span>
+          </div>
+          <div class="signatures-preview">
+            <span class="sig-tag"><i class="fa-solid fa-check"></i> Trưởng P. VTTBYT đã duyệt</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modalFefoAllocation')">Đóng</button>
+        <button class="btn btn-secondary" id="btnPrintExpDocFromModal">
+          <i class="fa-solid fa-print"></i> In Chứng Từ Xuất Kho (Mẫu 02)
+        </button>
+        <button class="btn btn-success" id="btnConfirmFefoDispatch">
+          <i class="fa-solid fa-signature"></i> Bàn Giao Nhận Hàng & Cập Nhật Thẻ Kho (Bước 5 & 6)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GHI NHẬT KÝ NHIỆT ẨM KẾ KHO (GSP) -->
+  <div class="modal-backdrop" id="modalTempLog">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-temperature-arrow-up"></i> Ghi Nhật Ký Nhiệt Độ & Độ Ẩm Kho</h3>
+        <button class="modal-close" onclick="closeModal('modalTempLog')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Khu vực kho kiểm tra:</label>
+          <select id="logZoneSelect" class="form-control">
+            <option value="ambient">Kho Thường (VTYT Tiêu Hao - Chuẩn 15-25°C)</option>
+            <option value="cool">Kho Mát (Chuẩn 8-15°C)</option>
+            <option value="cold">Kho Lạnh (Chuẩn &le; 8°C)</option>
+            <option value="fridge">Tủ Lạnh Sinh Phẩm / Hóa Chất XN (Chuẩn 2-8°C)</option>
+          </select>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nhiệt độ đo được (°C):</label>
+            <input type="number" step="0.1" id="logTempInput" class="form-control" value="23.5">
+          </div>
+          <div class="form-group">
+            <label>Độ ẩm đo được (%):</label>
+            <input type="number" step="1" id="logHumInput" class="form-control" value="65">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Người đo / ghi chép:</label>
+          <input type="text" id="logUser" class="form-control" value="DS. Trần Văn An (Thủ kho)">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modalTempLog')">Hủy</button>
+        <button class="btn btn-primary" id="btnSaveTempLog">Lưu Nhật Ký</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
